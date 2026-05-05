@@ -8,7 +8,7 @@ DIST_DIR  = dist
 ARCH      = $(shell uname -m)
 ZIP_NAME  = $(APP_NAME)-macOS-$(ARCH).zip
 
-.PHONY: build app run clean icon install
+.PHONY: build app run clean icon install test
 
 build:
 	swift build -c release
@@ -40,6 +40,7 @@ app: build
 		echo "Injected CFBundleVersion=$$COUNT"; \
 	fi
 	cp Resources/AppIcon.icns $(CONTENTS)/Resources/AppIcon.icns
+	cp Resources/DefaultConfig.json $(CONTENTS)/Resources/DefaultConfig.json
 	@bash scripts/ensure_signing_cert.sh "$(CERT_NAME)" || true
 	@if security find-certificate -c "$(CERT_NAME)" ~/Library/Keychains/login.keychain-db >/dev/null 2>&1; then \
 		codesign --force --deep --sign "$(CERT_NAME)" $(APP_BUNDLE); \
@@ -64,3 +65,6 @@ install: app
 
 clean:
 	rm -rf .build $(APP_BUNDLE) $(DIST_DIR)
+
+test:
+	swift test
