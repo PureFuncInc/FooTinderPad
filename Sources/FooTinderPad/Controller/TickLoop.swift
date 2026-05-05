@@ -7,6 +7,7 @@ final class TickLoop {
     private weak var dispatcher: InputDispatcher?
     private var link: CVDisplayLink?
     private var lastHostTime: UInt64 = 0
+    private var observerRef: UnsafeMutableRawPointer?
 
     init(dispatcher: InputDispatcher) {
         self.dispatcher = dispatcher
@@ -21,19 +22,29 @@ final class TickLoop {
         }
         self.link = l
 
-        let observer = Unmanaged.passUnretained(self).toOpaque()
+        // passRetained: keep self alive until stop() releases. CVDisplayLinkStop
+        // guarantees the output callback has returned before it returns, so
+        // releasing inside stop() is safe.
+        let observer = Unmanaged.passRetained(self).toOpaque()
         CVDisplayLinkSetOutputCallback(l, { _, inNow, inOutputTime, _, _, ctx in
             let lp = Unmanaged<TickLoop>.fromOpaque(ctx!).takeUnretainedValue()
             let now = inNow.pointee.hostTime
             DispatchQueue.main.async { lp.tick(hostTime: now) }
             return kCVReturnSuccess
         }, observer)
+        self.observerRef = observer
         CVDisplayLinkStart(l)
     }
 
     func stop() {
-        if let l = link { CVDisplayLinkStop(l) }
+        if let l = link {
+            CVDisplayLinkStop(l)
+        }
         link = nil
+        if let observer = observerRef {
+            Unmanaged<TickLoop>.fromOpaque(observer).release()
+            observerRef = nil
+        }
     }
 
     private func tick(hostTime: UInt64) {
