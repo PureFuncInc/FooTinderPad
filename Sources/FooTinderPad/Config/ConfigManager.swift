@@ -16,9 +16,15 @@ final class ConfigManager {
 
     init(configURLOverride: URL? = nil) {
         self.url = configURLOverride ?? Paths.configURL
-        self.current = ConfigManager.loadInitial(url: self.url)
+        // Placeholder so all stored properties are initialized before we call
+        // an instance method. loadOnce() will replace it with the real config.
+        self.current = .empty
+        self.current = self.loadOnce().config
     }
 
+    /// First-load chain: try the user file, then the bundled default, then the
+    /// in-memory hard-coded default, then `.empty`. Used by `init` and `start`,
+    /// not by hot-reload (hot-reload preserves the previous config on failure).
     func loadOnce() -> LoadResult {
         do {
             let data = try Data(contentsOf: url)
@@ -30,7 +36,7 @@ final class ConfigManager {
                 return try ConfigLoader.load(from: data)
             } catch {
                 log.error("default config also unparseable: \(error.localizedDescription, privacy: .public)")
-                return LoadResult(config: ResolvedConfig.empty, warnings: ["fallback to empty config"])
+                return LoadResult(config: .empty, warnings: ["fallback to empty config"])
             }
         }
     }
@@ -52,11 +58,10 @@ final class ConfigManager {
         debounce = nil
     }
 
+    /// Manual reload (menu bar item). On parse / read failure, keeps the
+    /// previous `current` and emits a warning rather than swapping in a default.
     func reloadNow() {
-        let r = loadOnce()
-        current = r.config
-        onSwap?(r.config)
-        onWarnings?(r.warnings)
+        swapFromUserFile()
     }
 
     // MARK: - private
@@ -81,14 +86,19 @@ final class ConfigManager {
         return DefaultConfig.data
     }
 
-    private static func loadInitial(url: URL) -> ResolvedConfig {
-        let mgr = ConfigManager(_internalURL: url)
-        return mgr.loadOnce().config
-    }
-
-    private init(_internalURL url: URL) {
-        self.url = url
-        self.current = ResolvedConfig.empty
+    /// Reads the user file and tries to swap it in. Preserves the previous
+    /// `current` on any failure (the spec contract for hot reload).
+    private func swapFromUserFile() {
+        do {
+            let data = try Data(contentsOf: url)
+            let r = try ConfigLoader.load(from: data)
+            current = r.config
+            onSwap?(r.config)
+            onWarnings?(r.warnings)
+        } catch {
+            log.warning("reload failed (\(error.localizedDescription, privacy: .public)); keeping previous config")
+            onWarnings?(["reload failed: \(error.localizedDescription)"])
+        }
     }
 
     private func armSource() {
@@ -122,12 +132,10 @@ final class ConfigManager {
     }
 
     private func performReload() {
-        // The file may have been renamed by editors that write atomically.
-        // Re-arm regardless of success so we keep watching the path.
-        let r = loadOnce()
-        current = r.config
-        onSwap?(r.config)
-        onWarnings?(r.warnings)
+        // Hot reload: keep previous `current` on parse / read failure.
+        // Re-arm regardless because the file may have been renamed by an
+        // atomic-write editor (closing our fd against the old inode).
+        swapFromUserFile()
         armSource()
     }
 }
