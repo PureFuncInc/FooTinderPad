@@ -1,5 +1,3 @@
-import Foundation
-
 enum ControllerButton: String, CaseIterable, Hashable {
     case buttonA, buttonB, buttonX, buttonY
     case leftShoulder, rightShoulder
