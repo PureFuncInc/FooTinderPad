@@ -10,8 +10,9 @@ protocol EventSink: AnyObject {
 
 final class CGEventSink: EventSink {
 
+    // Callers (MouseSynthesizer.move / .scroll) already short-circuit on
+    // zero deltas — no need to guard here too.
     func mouseMove(deltaX: Int, deltaY: Int) {
-        guard deltaX != 0 || deltaY != 0 else { return }
         let cur = CGEvent(source: nil)?.location ?? .zero
         let target = CGPoint(x: cur.x + CGFloat(deltaX), y: cur.y + CGFloat(deltaY))
         let ev = CGEvent(mouseEventSource: nil, mouseType: .mouseMoved, mouseCursorPosition: target, mouseButton: .left)
@@ -34,7 +35,6 @@ final class CGEventSink: EventSink {
     }
 
     func scroll(deltaX: Int, deltaY: Int) {
-        guard deltaX != 0 || deltaY != 0 else { return }
         let ev = CGEvent(scrollWheelEvent2Source: nil,
                          units: .line,
                          wheelCount: 2,
