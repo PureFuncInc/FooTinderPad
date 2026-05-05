@@ -31,12 +31,17 @@ final class AccessibilityGate {
         alert.addButton(withTitle: "Quit")
         NSApp.activate(ignoringOtherApps: true)
         let response = alert.runModal()
-        if response == .alertFirstButtonReturn {
-            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-                NSWorkspace.shared.open(url)
+        if response == .alertFirstButtonReturn,
+           let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+            NSWorkspace.shared.open(url)
+            // Give Settings a beat to surface so the user doesn't see our app
+            // wink out the same instant they click "Open System Settings".
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                NSApp.terminate(nil)
             }
+        } else {
+            NSApp.terminate(nil)
         }
-        NSApp.terminate(nil)
     }
 
     /// Starts a 5 s timer that picks up grant changes made while running.
