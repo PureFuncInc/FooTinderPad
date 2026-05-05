@@ -51,19 +51,26 @@ final class MenuBar {
 
     func setIcon(_ state: IconState) {
         guard let button = statusItem?.button else { return }
-        let color: NSColor
-        switch state {
-        case .operational: color = .white
-        case .idle:        color = .gray
-        case .unauthorized: color = .systemRed
-        }
         let size = NSImage.SymbolConfiguration(pointSize: 18, weight: .regular, scale: .medium)
-        let palette = NSImage.SymbolConfiguration(paletteColors: [color])
-        let cfg = size.applying(palette)
-        let image = NSImage(systemSymbolName: "square.stack.3d.up", accessibilityDescription: nil)?
-            .withSymbolConfiguration(cfg)
-        image?.isTemplate = false
-        button.image = image
+        let base = NSImage(systemSymbolName: "square.stack.3d.up", accessibilityDescription: nil)
+        switch state {
+        case .operational:
+            // template = true so macOS auto-tints to the menu bar foreground colour
+            // (black in light mode, white in dark mode) — full contrast against the bar.
+            let image = base?.withSymbolConfiguration(size)
+            image?.isTemplate = true
+            button.image = image
+        case .idle:
+            let palette = NSImage.SymbolConfiguration(paletteColors: [.systemGray])
+            let image = base?.withSymbolConfiguration(size.applying(palette))
+            image?.isTemplate = false
+            button.image = image
+        case .unauthorized:
+            let palette = NSImage.SymbolConfiguration(paletteColors: [.systemRed])
+            let image = base?.withSymbolConfiguration(size.applying(palette))
+            image?.isTemplate = false
+            button.image = image
+        }
         button.title = ""
     }
 

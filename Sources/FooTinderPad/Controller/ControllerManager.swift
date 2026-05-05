@@ -16,6 +16,11 @@ final class ControllerManager {
     }
 
     func start() {
+        // Receive controller events even when not frontmost. Without this,
+        // gamecontrollerd routes events only to the foreground app — so a
+        // menu-bar utility like ours never sees presses while the user types
+        // into another window. Required for our LSUIElement architecture.
+        GCController.shouldMonitorBackgroundEvents = true
         NotificationCenter.default.addObserver(self, selector: #selector(didConnect),
                                                name: .GCControllerDidConnect, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(didDisconnect),
@@ -28,6 +33,7 @@ final class ControllerManager {
         unwireCurrent()
         stack.removeAll()
         active = nil
+        GCController.shouldMonitorBackgroundEvents = false
     }
 
     @objc private func didConnect(_ note: Notification) {
