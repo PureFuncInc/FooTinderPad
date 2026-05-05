@@ -132,13 +132,3 @@ final class ConfigManager {
     }
 }
 
-extension ResolvedConfig {
-    static let empty = ResolvedConfig(
-        deadzone: 0.15,
-        mouseSpeed: 15,
-        scrollSpeed: 5,
-        leftStick: .mouse,
-        rightStick: .scroll,
-        bindings: Dictionary(uniqueKeysWithValues: ControllerButton.allCases.map { ($0, .none) })
-    )
-}

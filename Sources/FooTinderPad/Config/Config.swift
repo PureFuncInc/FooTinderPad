@@ -10,6 +10,18 @@ struct ResolvedConfig: Equatable {
     let leftStick: StickRole
     let rightStick: StickRole
     let bindings: [ControllerButton: ResolvedBinding]
+
+    /// In-memory placeholder used before the first successful load. Mirrors the
+    /// shape produced by ConfigLoader so consumers can rely on the bindings
+    /// dictionary always containing every ControllerButton case.
+    static let empty = ResolvedConfig(
+        deadzone: 0.15,
+        mouseSpeed: 15,
+        scrollSpeed: 5,
+        leftStick: .mouse,
+        rightStick: .scroll,
+        bindings: Dictionary(uniqueKeysWithValues: ControllerButton.allCases.map { ($0, ResolvedBinding.none) })
+    )
 }
 
 enum ResolvedBinding: Equatable {
