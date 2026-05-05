@@ -10,7 +10,7 @@ final class RecordingSink: EventSink {
         case keyEvent(CGKeyCode, Bool, CGEventFlags)
     }
 
-    private(set) var actions: [Action] = []
+    var actions: [Action] = []
 
     func mouseMove(deltaX: Int, deltaY: Int)            { actions.append(.mouseMove(deltaX, deltaY)) }
     func mouseButton(_ button: MouseButton, down: Bool) { actions.append(.mouseButton(button, down)) }
