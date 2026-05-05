@@ -6,7 +6,7 @@ struct StickEmit: Equatable {
 }
 
 struct StickProcessor {
-    let deadzone: Double
+    var deadzone: Double
 
     private var accumX: Double = 0
     private var accumY: Double = 0
