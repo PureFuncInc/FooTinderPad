@@ -11,14 +11,16 @@ enum KeyParseError: Error, CustomStringConvertible {
     case empty
     case unknownToken(String)
     case nonModifierBeforeFinal(String)
-    case trailingSeparator
+    case emptySeparatorComponent
+    case modifierInMainKeyPosition(String)
 
     var description: String {
         switch self {
         case .empty: return "empty key string"
         case .unknownToken(let t): return "unknown token: \(t)"
         case .nonModifierBeforeFinal(let t): return "non-modifier '\(t)' appeared before final position"
-        case .trailingSeparator: return "trailing '+'"
+        case .emptySeparatorComponent: return "empty component in key string (check for leading, doubled, or trailing '+')"
+        case .modifierInMainKeyPosition(let t): return "modifier '\(t)' cannot appear as the final key"
         }
     }
 }
@@ -31,7 +33,7 @@ enum KeyParser {
 
         let tokens = trimmed.split(separator: "+", omittingEmptySubsequences: false)
             .map { $0.trimmingCharacters(in: .whitespaces) }
-        guard !tokens.contains(where: { $0.isEmpty }) else { throw KeyParseError.trailingSeparator }
+        guard !tokens.contains(where: { $0.isEmpty }) else { throw KeyParseError.emptySeparatorComponent }
 
         // Single token: either a main key, or a modifier-only binding
         if tokens.count == 1 {
@@ -59,6 +61,9 @@ enum KeyParser {
         }
         let lastLower = tokens.last!.lowercased()
         guard let main = mainKey(from: lastLower) else {
+            if modifier(from: lastLower) != nil {
+                throw KeyParseError.modifierInMainKeyPosition(tokens.last!)
+            }
             throw KeyParseError.unknownToken(tokens.last!)
         }
         return ParsedKey(mainKey: main, modifiers: mods)
