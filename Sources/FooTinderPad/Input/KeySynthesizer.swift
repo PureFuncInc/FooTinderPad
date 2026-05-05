@@ -35,7 +35,8 @@ final class KeySynthesizer {
             sink.keyEvent(keyCode: key, down: false, flags: currentFlags())
         }
         heldMainKeys.removeAll()
-        for (mod, count) in modCount where count > 0 {
+        let snapshot = modCount
+        for (mod, count) in snapshot where count > 0 {
             for _ in 0..<count { releaseMod(mod) }
         }
     }
