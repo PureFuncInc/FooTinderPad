@@ -76,7 +76,7 @@ final class ConfigParserTests: XCTestCase {
         { "bindings": { "buttonZ": { "type": "key", "key": "Space" } } }
         """#.data(using: .utf8)!
         let result = try ConfigLoader.load(from: json)
-        XCTAssertEqual(result.config.bindings[.buttonA], .none)
+        XCTAssertEqual(result.config.bindings[.buttonA], ResolvedBinding.none)
         XCTAssertTrue(result.warnings.contains { $0.contains("buttonZ") })
     }
 
@@ -85,7 +85,7 @@ final class ConfigParserTests: XCTestCase {
         { "bindings": { "buttonA": { "type": "key", "key": "Foo" } } }
         """#.data(using: .utf8)!
         let result = try ConfigLoader.load(from: json)
-        XCTAssertEqual(result.config.bindings[.buttonA], .none)
+        XCTAssertEqual(result.config.bindings[.buttonA], ResolvedBinding.none)
         XCTAssertTrue(result.warnings.contains { $0.contains("buttonA") })
     }
 
@@ -95,7 +95,7 @@ final class ConfigParserTests: XCTestCase {
         """#.data(using: .utf8)!
         let result = try ConfigLoader.load(from: json)
         XCTAssertEqual(result.config.bindings[.buttonA], .key(mainKey: 0x31, modifiers: []))
-        XCTAssertEqual(result.config.bindings[.buttonB], .none)
+        XCTAssertEqual(result.config.bindings[.buttonB], ResolvedBinding.none)
         XCTAssertEqual(result.config.bindings.count, ControllerButton.allCases.count)
     }
 }

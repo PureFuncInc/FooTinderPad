@@ -3,31 +3,13 @@ import CoreGraphics
 
 // MARK: - Resolved (runtime) model
 
-/// A map from every ControllerButton to its resolved binding.
-/// The subscript always returns a non-optional ResolvedBinding (.none when unset),
-/// and `count` always equals ControllerButton.allCases.count.
-struct BindingMap: Equatable {
-    private var storage: [ControllerButton: ResolvedBinding]
-
-    init(_ storage: [ControllerButton: ResolvedBinding] = [:]) {
-        self.storage = storage
-    }
-
-    subscript(button: ControllerButton) -> ResolvedBinding {
-        get { storage[button] ?? ResolvedBinding.none }
-        set { storage[button] = newValue }
-    }
-
-    var count: Int { ControllerButton.allCases.count }
-}
-
 struct ResolvedConfig: Equatable {
     let deadzone: Double
     let mouseSpeed: Double
     let scrollSpeed: Double
     let leftStick: StickRole
     let rightStick: StickRole
-    let bindings: BindingMap
+    let bindings: [ControllerButton: ResolvedBinding]
 }
 
 enum ResolvedBinding: Equatable {
@@ -86,8 +68,9 @@ enum ConfigLoader {
         let leftStick = raw.leftStick ?? .mouse
         let rightStick = raw.rightStick ?? .scroll
 
-        // Bindings — BindingMap returns .none for missing keys
-        var resolved = BindingMap()
+        // Bindings — start with all .none, then overlay valid ones
+        var resolved: [ControllerButton: ResolvedBinding] = [:]
+        for b in ControllerButton.allCases { resolved[b] = ResolvedBinding.none }
 
         for (rawKey, rawBinding) in (raw.bindings ?? [:]) {
             guard let button = ControllerButton(rawValue: rawKey) else {
@@ -96,16 +79,18 @@ enum ConfigLoader {
             }
             switch rawBinding.type {
             case "none":
-                break // leave as default .none
+                resolved[button] = ResolvedBinding.none
             case "mouseButton":
                 if let m = rawBinding.button {
                     resolved[button] = .mouseButton(m)
                 } else {
                     warnings.append("\(rawKey): mouseButton missing 'button' field — set to none")
+                    resolved[button] = ResolvedBinding.none
                 }
             case "key":
                 guard let keyStr = rawBinding.key else {
                     warnings.append("\(rawKey): key missing 'key' field — set to none")
+                    resolved[button] = ResolvedBinding.none
                     continue
                 }
                 do {
@@ -113,9 +98,11 @@ enum ConfigLoader {
                     resolved[button] = .key(mainKey: parsed.mainKey, modifiers: parsed.modifiers)
                 } catch {
                     warnings.append("\(rawKey): could not parse '\(keyStr)' (\(error)) — set to none")
+                    resolved[button] = ResolvedBinding.none
                 }
             default:
                 warnings.append("\(rawKey): unknown binding type '\(rawBinding.type)' — set to none")
+                resolved[button] = ResolvedBinding.none
             }
         }
 
