@@ -1,0 +1,52 @@
+import Foundation
+import CoreGraphics
+
+protocol EventSink: AnyObject {
+    func mouseMove(deltaX: Int, deltaY: Int)
+    func mouseButton(_ button: MouseButton, down: Bool)
+    func scroll(deltaX: Int, deltaY: Int)
+    func keyEvent(keyCode: CGKeyCode, down: Bool, flags: CGEventFlags)
+}
+
+final class CGEventSink: EventSink {
+
+    func mouseMove(deltaX: Int, deltaY: Int) {
+        guard deltaX != 0 || deltaY != 0 else { return }
+        let cur = CGEvent(source: nil)?.location ?? .zero
+        let target = CGPoint(x: cur.x + CGFloat(deltaX), y: cur.y + CGFloat(deltaY))
+        let ev = CGEvent(mouseEventSource: nil, mouseType: .mouseMoved, mouseCursorPosition: target, mouseButton: .left)
+        ev?.post(tap: .cghidEventTap)
+    }
+
+    func mouseButton(_ button: MouseButton, down: Bool) {
+        let pos = CGEvent(source: nil)?.location ?? .zero
+        let (type, cgButton): (CGEventType, CGMouseButton)
+        switch (button, down) {
+        case (.left, true):   (type, cgButton) = (.leftMouseDown, .left)
+        case (.left, false):  (type, cgButton) = (.leftMouseUp, .left)
+        case (.right, true):  (type, cgButton) = (.rightMouseDown, .right)
+        case (.right, false): (type, cgButton) = (.rightMouseUp, .right)
+        case (.middle, true): (type, cgButton) = (.otherMouseDown, .center)
+        case (.middle, false):(type, cgButton) = (.otherMouseUp, .center)
+        }
+        let ev = CGEvent(mouseEventSource: nil, mouseType: type, mouseCursorPosition: pos, mouseButton: cgButton)
+        ev?.post(tap: .cghidEventTap)
+    }
+
+    func scroll(deltaX: Int, deltaY: Int) {
+        guard deltaX != 0 || deltaY != 0 else { return }
+        let ev = CGEvent(scrollWheelEvent2Source: nil,
+                         units: .line,
+                         wheelCount: 2,
+                         wheel1: Int32(deltaY),
+                         wheel2: Int32(deltaX),
+                         wheel3: 0)
+        ev?.post(tap: .cghidEventTap)
+    }
+
+    func keyEvent(keyCode: CGKeyCode, down: Bool, flags: CGEventFlags) {
+        guard let ev = CGEvent(keyboardEventSource: nil, virtualKey: keyCode, keyDown: down) else { return }
+        ev.flags = flags
+        ev.post(tap: .cghidEventTap)
+    }
+}
