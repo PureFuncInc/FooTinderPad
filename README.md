@@ -91,6 +91,8 @@ make clean && make install
 
 第一次開啟時 macOS 可能要求核可: 選單上的項目會旁邊出現黃色三角警示, 點下去會帶你到「系統設定 → 一般 → 登入項目」, 在那邊把 FooTinderPad 切到開即可。
 
+若 app 是用本機 self-signed 簽章 (例如預設的 `FooTinderPadDev` cert, 沒有 Apple Developer Team Identifier), `SMAppService` 沒辦法登錄 login item。這時我們會自動 fallback: 寫一份 LaunchAgent plist 到 `~/Library/LaunchAgents/com.purefuncinc.FooTinderPad.plist`, 下次登入由 launchd 啟動 app。要關掉一樣從選單按一次 `Launch at Login` 即可 (我們會把 plist 刪掉)。注意這條路線下,「系統設定 → 一般 → 登入項目」清單不會列出 FooTinderPad — 我們選單上的 toggle 是真實狀態。
+
 ## 支援的控制器按鈕
 
 下表的 key 用於 `bindings` 物件的 JSON 屬性名。沒列在 config 裡的按鈕會被當成 `none`。
