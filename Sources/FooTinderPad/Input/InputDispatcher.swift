@@ -69,10 +69,14 @@ final class InputDispatcher {
         case .none:
             return
         case .mouse:
-            let out = processor.tick(x: x, y: y, speed: speedMouse, tickScale: tickScale, invertY: true)
+            let out = processor.tick(x: x, y: y, speed: speedMouse,
+                                     curve: 1.0,
+                                     tickScale: tickScale, invertY: true)
             mouse.move(deltaX: out.deltaX, deltaY: out.deltaY)
         case .scroll:
-            let out = processor.tick(x: x, y: y, speed: speedScroll, tickScale: tickScale, invertY: false)
+            let out = processor.tick(x: x, y: y, speed: speedScroll,
+                                     curve: 1.0,
+                                     tickScale: tickScale, invertY: false)
             mouse.scroll(deltaX: out.deltaX, deltaY: out.deltaY)
         }
     }

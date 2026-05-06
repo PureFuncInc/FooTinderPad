@@ -15,22 +15,24 @@ struct StickProcessor {
         self.deadzone = max(0.0, min(0.49, deadzone))
     }
 
-    mutating func tick(x: Double, y: Double, speed: Double, tickScale: Double, invertY: Bool) -> StickEmit {
+    mutating func tick(x: Double, y: Double, speed: Double, curve: Double,
+                       tickScale: Double, invertY: Bool) -> StickEmit {
         let mag = (x * x + y * y).squareRoot()
         guard mag >= deadzone, mag > 0 else {
             accumX = 0; accumY = 0
             return StickEmit(deltaX: 0, deltaY: 0)
         }
         let n = (mag - deadzone) / (1 - deadzone)
-        let scale = n / mag
+        let nCurved = pow(n, curve)
+        let scale = nCurved / mag
         let nx = x * scale
         let ny = y * scale
 
         accumX += nx * speed * tickScale
         accumY += (invertY ? -1 : 1) * ny * speed * tickScale
 
-        let emitX = Int(accumX.rounded(.towardZero))
-        let emitY = Int(accumY.rounded(.towardZero))
+        let emitX = Int(accumX.rounded())
+        let emitY = Int(accumY.rounded())
         accumX -= Double(emitX)
         accumY -= Double(emitY)
 
