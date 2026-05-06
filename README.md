@@ -85,6 +85,12 @@
 make clean && make install
 ```
 
+## Launch at Login
+
+從選單列點 FooTinderPad 圖示 → `Launch at Login` 切換開關。打開後 macOS 會在使用者登入時自動啟動 app, 同樣的開關也會出現在「系統設定 → 一般 → 登入項目」。
+
+第一次開啟時 macOS 可能要求核可: 選單上的項目會旁邊出現黃色三角警示, 點下去會帶你到「系統設定 → 一般 → 登入項目」, 在那邊把 FooTinderPad 切到開即可。
+
 ## 支援的控制器按鈕
 
 下表的 key 用於 `bindings` 物件的 JSON 屬性名。沒列在 config 裡的按鈕會被當成 `none`。
