@@ -20,6 +20,8 @@ final class InputDispatcher {
     private let configProvider: () -> ResolvedConfig
     private let key: KeySynthesizer
     private let mouse: MouseSynthesizer
+    private let clock: () -> TimeInterval
+    private let repeater = RepeatScheduler()
     private var leftStick = StickProcessor(deadzone: 0.15)
     private var rightStick = StickProcessor(deadzone: 0.15)
     private var leftTrigger = TriggerHysteresis()
@@ -29,17 +31,21 @@ final class InputDispatcher {
     private var lastRightX: Double = 0
     private var lastRightY: Double = 0
 
-    init(config: @escaping () -> ResolvedConfig, key: KeySynthesizer, mouse: MouseSynthesizer) {
+    init(config: @escaping () -> ResolvedConfig,
+         key: KeySynthesizer,
+         mouse: MouseSynthesizer,
+         clock: @escaping () -> TimeInterval = { Date().timeIntervalSinceReferenceDate }) {
         self.configProvider = config
         self.key = key
         self.mouse = mouse
+        self.clock = clock
     }
 
     // MARK: - inbound from controller
 
     func handleButton(_ button: ControllerButton, pressed: Bool) {
         guard let binding = configProvider().bindings[button] else { return }
-        applyBinding(binding, pressed: pressed)
+        applyBinding(binding, button: button, pressed: pressed)
     }
 
     func handleTrigger(_ button: ControllerButton, value: Double) {
@@ -62,6 +68,9 @@ final class InputDispatcher {
     // MARK: - tick (called by TickLoop)
 
     func tick(dt: Double) {
+        repeater.tick(now: clock()) { [weak key] _, parsed in
+            key?.repeatPress(parsed)
+        }
         let cfg = configProvider()
         leftStick.deadzone = cfg.deadzone
         rightStick.deadzone = cfg.deadzone
@@ -94,19 +103,28 @@ final class InputDispatcher {
     }
 
     func drainHeldInputs() {
+        repeater.clear()
         key.drain()
         mouse.drain()
     }
 
     // MARK: - private
 
-    private func applyBinding(_ binding: ResolvedBinding, pressed: Bool) {
+    private func applyBinding(_ binding: ResolvedBinding, button: ControllerButton, pressed: Bool) {
         switch binding {
         case .none:
             return
-        case .key(let main, let mods, _):
+        case .key(let main, let mods, let isRepeat):
             let parsed = ParsedKey(mainKey: main, modifiers: mods)
-            if pressed { key.press(parsed) } else { key.release(parsed) }
+            if pressed {
+                key.press(parsed)
+                if isRepeat {
+                    repeater.start(button: button, parsedKey: parsed, now: clock())
+                }
+            } else {
+                repeater.stop(button: button)
+                key.release(parsed)
+            }
         case .mouseButton(let b):
             mouse.button(b, down: pressed)
         }
