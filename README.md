@@ -1,5 +1,56 @@
 # FooTinderPad
 
+將遊戲控制器 (Game Controller) 對應為 macOS 的鍵盤與滑鼠輸入, 讓你能用搖桿操作整個系統。
+
+## 預設設定
+
+```json
+{
+  "deadzone": 0.15,
+  "mouseSpeed": 15,
+  "scrollSpeed": 5,
+  "bindings": {
+    "buttonA": { "type": "key", "key": "Space" },
+    "buttonB": { "type": "key", "key": "Return" },
+    "buttonX": { "type": "mouseButton", "button": "left" },
+    "buttonY": { "type": "key", "key": "Delete" },
+    "leftShoulder": { "type": "key", "key": "Escape" },
+    "rightShoulder": { "type": "mouseButton", "button": "right" },
+    "leftTrigger": { "type": "key", "key": "RightShift" },
+    "rightTrigger": { "type": "key", "key": "Alt+Return" },
+    "leftThumbstickButton": { "type": "none" },
+    "rightThumbstickButton": { "type": "none" },
+    "dpadUp": { "type": "key", "key": "Up" },
+    "dpadDown": { "type": "key", "key": "Down" },
+    "dpadLeft": { "type": "key", "key": "Left" },
+    "dpadRight": { "type": "key", "key": "Right" }
+  },
+  "leftStick": "mouse",
+  "rightStick": "scroll"
+}
+```
+
+### 控制器正面
+
+![控制器正面](docs/front.png)
+
+### 控制器背面
+
+![控制器背面](docs/back.png)
+
+## Requirements
+
+- macOS 13 (Ventura) 以上
+- Swift 5.9 以上 (Xcode 15+)
+- 已配對的遊戲控制器 (Xbox / PlayStation)
+- 系統設定中授予 「輔助使用 (Accessibility) 」 權限
+
+## Install
+
+```bash
+make clean && make install
+```
+
 ## 支援的按鍵
 
 `bindings` 中使用的 key 字串 (例如 `"key": "Ctrl+Shift+A"`) 由 `KeyParser` 解析。Token 大小寫不敏感, 以 `+` 串接組合鍵。
