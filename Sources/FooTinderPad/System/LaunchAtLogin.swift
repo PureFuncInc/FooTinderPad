@@ -15,53 +15,88 @@ enum LaunchAtLoginAction: Equatable {
     case openSystemSettings
 }
 
+enum LaunchAtLoginError: Error, LocalizedError {
+    case noExecutablePath
+    var errorDescription: String? {
+        switch self {
+        case .noExecutablePath: return "could not resolve app executable path"
+        }
+    }
+}
+
 final class LaunchAtLogin {
     private let log = Logger(subsystem: "com.purefuncinc.FooTinderPad", category: "LaunchAtLogin")
+    private let plistURL: URL
     private(set) var state: LaunchAtLoginState
 
     /// Called on the main queue every time `state` transitions.
     var onStateChange: ((LaunchAtLoginState) -> Void)?
 
-    init() {
-        self.state = Self.readState()
+    static let defaultPlistURL: URL = {
+        FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/LaunchAgents/com.purefuncinc.FooTinderPad.plist")
+    }()
+
+    init(plistURL: URL = LaunchAtLogin.defaultPlistURL) {
+        self.plistURL = plistURL
+        self.state = Self.readState(plistURL: plistURL)
         log.info("initial launch-at-login state: \(String(describing: self.state), privacy: .public)")
     }
 
-    /// Re-reads `SMAppService.mainApp.status`. Called from `NSMenuDelegate.menuWillOpen`
-    /// so external changes (e.g. user toggling in System Settings) sync on next menu open.
+    /// Re-reads state. Plist-first (LaunchAgent path wins if present), else SMAppService.
     func refresh() {
-        let next = Self.readState()
+        let next = Self.readState(plistURL: plistURL)
         guard next != state else { return }
         log.info("launch-at-login state changed: \(String(describing: next), privacy: .public)")
         state = next
         onStateChange?(next)
     }
 
-    /// State-aware click dispatch — see `LaunchAtLogin.action(for:)` for the routing rules.
-    /// `.requiresApproval` / `.failed` route to System Settings because re-`register()`-ing
-    /// before the user approves is a no-op and would leave them stuck.
+    /// State-aware click dispatch with SMAppService → LaunchAgent fallback on enable.
     func handleClick() {
         switch Self.action(for: state) {
         case .enable:
+            var smaSucceeded = false
             do {
                 try SMAppService.mainApp.register()
+                switch SMAppService.mainApp.status {
+                case .enabled, .requiresApproval:
+                    smaSucceeded = true
+                default:
+                    smaSucceeded = false
+                }
             } catch {
-                log.error("register failed: \(error.localizedDescription, privacy: .public)")
-                state = .failed(error.localizedDescription)
-                onStateChange?(state)
-                return
+                log.info("SMAppService.register failed (\(error.localizedDescription, privacy: .public)); falling back to LaunchAgent plist")
+                smaSucceeded = false
+            }
+            if !smaSucceeded {
+                guard let exec = Bundle.main.executableURL?.path else {
+                    log.error("no executable path; cannot write plist")
+                    state = .failed(LaunchAtLoginError.noExecutablePath.localizedDescription)
+                    onStateChange?(state)
+                    return
+                }
+                do {
+                    try Self.writePlist(at: plistURL, executablePath: exec)
+                } catch {
+                    log.error("plist write failed: \(error.localizedDescription, privacy: .public)")
+                    state = .failed(error.localizedDescription)
+                    onStateChange?(state)
+                    return
+                }
             }
             refresh()
 
         case .disable:
             do {
-                try SMAppService.mainApp.unregister()
+                try Self.removePlistIfPresent(at: plistURL)
             } catch {
-                log.error("unregister failed: \(error.localizedDescription, privacy: .public)")
+                log.error("plist remove failed: \(error.localizedDescription, privacy: .public)")
                 state = .failed(error.localizedDescription)
                 onStateChange?(state)
                 return
             }
+            try? SMAppService.mainApp.unregister()  // best-effort
             refresh()
 
         case .openSystemSettings:
@@ -77,13 +112,38 @@ final class LaunchAtLogin {
         }
     }
 
-    private static func readState() -> LaunchAtLoginState {
+    /// Reads state with plist-first priority. Internal so tests can call directly.
+    static func readState(plistURL: URL) -> LaunchAtLoginState {
+        if FileManager.default.fileExists(atPath: plistURL.path) {
+            return .enabled
+        }
         switch SMAppService.mainApp.status {
         case .enabled:           return .enabled
         case .notRegistered:     return .disabled
+        case .notFound:          return .disabled  // self-signed: looks "off, can enable" — fallback handles enable
         case .requiresApproval:  return .requiresApproval
-        case .notFound:          return .failed("login item not found")
         @unknown default:        return .failed("unknown SMAppService status")
         }
+    }
+
+    /// Writes the LaunchAgent plist atomically, creating parent directories as needed.
+    static func writePlist(at url: URL, executablePath: String) throws {
+        let dir = url.deletingLastPathComponent()
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let content: [String: Any] = [
+            "Label": "com.purefuncinc.FooTinderPad",
+            "ProgramArguments": [executablePath],
+            "RunAtLoad": true,
+            "KeepAlive": false,
+        ]
+        let data = try PropertyListSerialization.data(
+            fromPropertyList: content, format: .xml, options: 0)
+        try data.write(to: url, options: .atomic)
+    }
+
+    /// Removes the plist if present. No-op when absent (idempotent).
+    static func removePlistIfPresent(at url: URL) throws {
+        guard FileManager.default.fileExists(atPath: url.path) else { return }
+        try FileManager.default.removeItem(at: url)
     }
 }
