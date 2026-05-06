@@ -99,10 +99,17 @@ final class MenuBar: NSObject, NSMenuDelegate {
         return item
     }
 
-    private static func warningImage() -> NSImage? {
-        let palette = NSImage.SymbolConfiguration(paletteColors: [.systemYellow])
+    private static func enabledImage() -> NSImage? {
+        let palette = NSImage.SymbolConfiguration(paletteColors: [.systemGreen])
         let size = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
-        return NSImage(systemSymbolName: "exclamationmark.triangle.fill", accessibilityDescription: "Needs attention")?
+        return NSImage(systemSymbolName: "checkmark.circle.fill", accessibilityDescription: "Enabled")?
+            .withSymbolConfiguration(size.applying(palette))
+    }
+
+    private static func infoImage() -> NSImage? {
+        let palette = NSImage.SymbolConfiguration(paletteColors: [.systemGray])
+        let size = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
+        return NSImage(systemSymbolName: "info.circle", accessibilityDescription: "Needs attention")?
             .withSymbolConfiguration(size.applying(palette))
     }
 
@@ -111,22 +118,21 @@ final class MenuBar: NSObject, NSMenuDelegate {
     }
 
     func setLaunchAtLogin(state: LaunchAtLoginState) {
+        // Always render via image; never use NSMenuItem.state to avoid the macOS-native
+        // checkmark and our green check both showing at once.
+        launchAtLoginItem.state = .off
         switch state {
         case .enabled:
-            launchAtLoginItem.state = .on
-            launchAtLoginItem.image = nil
+            launchAtLoginItem.image = Self.enabledImage()
             launchAtLoginItem.toolTip = nil
         case .disabled:
-            launchAtLoginItem.state = .off
             launchAtLoginItem.image = nil
             launchAtLoginItem.toolTip = nil
         case .requiresApproval:
-            launchAtLoginItem.state = .off
-            launchAtLoginItem.image = Self.warningImage()
+            launchAtLoginItem.image = Self.infoImage()
             launchAtLoginItem.toolTip = "Approve in System Settings → General → Login Items"
         case .failed(let msg):
-            launchAtLoginItem.state = .off
-            launchAtLoginItem.image = Self.warningImage()
+            launchAtLoginItem.image = Self.infoImage()
             launchAtLoginItem.toolTip = msg
         }
     }
