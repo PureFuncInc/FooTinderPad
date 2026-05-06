@@ -98,4 +98,54 @@ final class ConfigParserTests: XCTestCase {
         XCTAssertEqual(result.config.bindings[.buttonB], ResolvedBinding.none)
         XCTAssertEqual(result.config.bindings.count, ControllerButton.allCases.count)
     }
+
+    func testMissingCurveFieldsUseDefaults() throws {
+        let json = "{}".data(using: .utf8)!
+        let result = try ConfigLoader.load(from: json)
+        XCTAssertEqual(result.config.mouseCurve, 2.0)
+        XCTAssertEqual(result.config.scrollCurve, 1.0)
+        XCTAssertFalse(result.warnings.contains { $0.contains("Curve") })
+    }
+
+    func testMouseCurveBelowFloorIsClampedWithWarning() throws {
+        let json = #"{"mouseCurve": 0.1}"#.data(using: .utf8)!
+        let result = try ConfigLoader.load(from: json)
+        XCTAssertEqual(result.config.mouseCurve, 0.5)
+        XCTAssertTrue(result.warnings.contains {
+            $0.contains("mouseCurve") && $0.contains("clamped to [0.5, 4.0]")
+        })
+    }
+
+    func testMouseCurveAboveCeilingIsClampedWithWarning() throws {
+        let json = #"{"mouseCurve": 10.0}"#.data(using: .utf8)!
+        let result = try ConfigLoader.load(from: json)
+        XCTAssertEqual(result.config.mouseCurve, 4.0)
+        XCTAssertTrue(result.warnings.contains {
+            $0.contains("mouseCurve") && $0.contains("clamped to [0.5, 4.0]")
+        })
+    }
+
+    func testNegativeMouseCurveIsClampedWithWarning() throws {
+        let json = #"{"mouseCurve": -1.0}"#.data(using: .utf8)!
+        let result = try ConfigLoader.load(from: json)
+        XCTAssertEqual(result.config.mouseCurve, 0.5)
+        XCTAssertTrue(result.warnings.contains { $0.contains("mouseCurve") })
+    }
+
+    func testScrollCurveOutOfRangeIsClampedWithWarning() throws {
+        let json = #"{"scrollCurve": 5.0}"#.data(using: .utf8)!
+        let result = try ConfigLoader.load(from: json)
+        XCTAssertEqual(result.config.scrollCurve, 4.0)
+        XCTAssertTrue(result.warnings.contains {
+            $0.contains("scrollCurve") && $0.contains("clamped to [0.5, 4.0]")
+        })
+    }
+
+    func testCurveValuesInRangeUsedAsIs() throws {
+        let json = #"{"mouseCurve": 1.5, "scrollCurve": 2.5}"#.data(using: .utf8)!
+        let result = try ConfigLoader.load(from: json)
+        XCTAssertEqual(result.config.mouseCurve, 1.5)
+        XCTAssertEqual(result.config.scrollCurve, 2.5)
+        XCTAssertFalse(result.warnings.contains { $0.contains("Curve") })
+    }
 }

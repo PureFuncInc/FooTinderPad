@@ -39,7 +39,9 @@ enum ResolvedBinding: Equatable {
 private struct RawConfig: Decodable {
     var deadzone: Double?
     var mouseSpeed: Double?
+    var mouseCurve: Double?
     var scrollSpeed: Double?
+    var scrollCurve: Double?
     var leftStick: StickRole?
     var rightStick: StickRole?
     var bindings: [String: RawBinding]?
@@ -49,6 +51,24 @@ private struct RawBinding: Decodable {
     let type: String
     let key: String?
     let button: MouseButton?
+}
+
+// MARK: - Helpers
+
+private func resolveCurve(
+    raw: Double?,
+    fieldName: String,
+    defaultValue: Double,
+    warnings: inout [String]
+) -> Double {
+    let lower = 0.5
+    let upper = 4.0
+    guard let value = raw else { return defaultValue }
+    if value < lower || value > upper {
+        warnings.append("\(fieldName) \(value) out of range; clamped to [\(lower), \(upper)]")
+        return min(max(value, lower), upper)
+    }
+    return value
 }
 
 // MARK: - Loader
@@ -80,6 +100,18 @@ enum ConfigLoader {
             warnings.append("scrollSpeed must be > 0; using default 5")
             scrollSpeed = 5
         }
+        let mouseCurve = resolveCurve(
+            raw: raw.mouseCurve,
+            fieldName: "mouseCurve",
+            defaultValue: 2.0,
+            warnings: &warnings
+        )
+        let scrollCurve = resolveCurve(
+            raw: raw.scrollCurve,
+            fieldName: "scrollCurve",
+            defaultValue: 1.0,
+            warnings: &warnings
+        )
 
         let leftStick = raw.leftStick ?? .mouse
         let rightStick = raw.rightStick ?? .scroll
@@ -125,9 +157,9 @@ enum ConfigLoader {
         let cfg = ResolvedConfig(
             deadzone: deadzone,
             mouseSpeed: mouseSpeed,
-            mouseCurve: 2.0,
+            mouseCurve: mouseCurve,
             scrollSpeed: scrollSpeed,
-            scrollCurve: 1.0,
+            scrollCurve: scrollCurve,
             leftStick: leftStick,
             rightStick: rightStick,
             bindings: resolved
