@@ -49,7 +49,7 @@
 |---|---|---|
 | × Cross | 滑鼠左鍵 | PS 慣例「主要動作」 |
 | ○ Circle | Escape | PS 慣例「取消/返回」 |
-| ■ Square | Backspace | 文字編輯刪除 |
+| ■ Square | Backspace (repeat) | 文字編輯刪除, 按住連續刪 |
 | △ Triangle | Space | 影片播放 / 瀏覽器捲頁 |
 | L1 | LeftShift | 跟方向鍵搭配選文字, 也跟 R1 (Return) 搭配組成 Shift+Enter |
 | R1 | Return | 確認 / 換行 |
@@ -57,7 +57,7 @@
 | R2 | RightCmd | 同上, 食指搆得到的位置, 適合右手切換 app |
 | L3 | Cmd+Z | Undo |
 | R3 | 滑鼠右鍵 | Context menu |
-| D-pad ↑↓←→ | 方向鍵 | UI 導航 / 文字游標 |
+| D-pad ↑↓←→ | 方向鍵 (repeat) | UI 導航 / 文字游標, 按住連續移動 |
 | Options (右上小鈕) | Cmd+C | 複製 (拇指容易按到, 比扳機順) |
 | Create (左上小鈕) | Cmd+V | 貼上 |
 | 觸控板按下 | Fn+Ctrl+Up | 呼叫 Mission Control (macOS 內建快捷鍵, 不需額外設定) |
@@ -135,3 +135,15 @@ make clean && make install
 - 重複的修飾鍵會自動去重。
 - 結尾若是修飾鍵 (例: `Ctrl+Shift`) 會丟出 `modifierInMainKeyPosition` 錯誤。
 - 空 token (開頭、 結尾或連續的 `+`) 會丟出 `emptySeparatorComponent` 錯誤。
+
+### 自動重複 (auto-repeat)
+
+`.key` 類型的 binding 可以加 `"repeat": true`,按住按鈕時對應鍵會以 ~30 Hz 連續重發 (400 ms 初始延遲後),類似實體鍵盤按住 Backspace 連刪。預設為 `false`,寫了 `"repeat": true` 但綁定是純修飾鍵 / mouseButton / none 的話會被忽略並產生 warning。
+
+範例:
+
+```json
+"buttonX": { "type": "key", "key": "Backspace", "repeat": true }
+```
+
+`docs/examples/easy-preset.json` 預設在 dpad 四個方向跟 Square (Backspace) 上開啟 repeat。
