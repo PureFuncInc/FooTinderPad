@@ -2,6 +2,13 @@
 
 將遊戲控制器 (Game Controller) 對應為 macOS 的鍵盤與滑鼠輸入, 讓你能用搖桿操作整個系統。
 
+## 設定檔位置
+
+執行期使用者設定:`~/Library/Application Support/FooTinderPad/config.json`
+- 第一次啟動會用 `Resources/DefaultConfig.json` 作為初始內容
+- 修改後**自動熱重載** (~100ms),不需要重啟 app
+- JSON 解析失敗時會保留前一份正確設定,警告會出現在選單列
+
 ## 預設設定
 
 ```json
@@ -23,12 +30,38 @@
     "dpadUp": { "type": "key", "key": "Up" },
     "dpadDown": { "type": "key", "key": "Down" },
     "dpadLeft": { "type": "key", "key": "Left" },
-    "dpadRight": { "type": "key", "key": "Right" }
+    "dpadRight": { "type": "key", "key": "Right" },
+    "optionsButton": { "type": "none" },
+    "createButton": { "type": "none" }
   },
   "leftStick": "mouse",
   "rightStick": "scroll"
 }
 ```
+
+## 示範設定 (易上手版)
+
+下載: [`docs/examples/easy-preset.json`](docs/examples/easy-preset.json) — 直接覆蓋到 `~/Library/Application Support/FooTinderPad/config.json` 即可。
+
+設計重點: 善用 PS 慣例 (Cross 確認 / Circle 取消)、讓三角 / 方塊 / 觸控板邊上的小鈕都各司其職、L2/R2 直接給最常用的複製貼上。
+
+| 按鈕 | 對應 | 說明 |
+|---|---|---|
+| × Cross | 滑鼠左鍵 | PS 慣例「主要動作」 |
+| ○ Circle | Escape | PS 慣例「取消/返回」 |
+| ■ Square | Backspace | 文字編輯刪除 |
+| △ Triangle | Space | 影片播放 / 瀏覽器捲頁 |
+| L1 | LeftShift | 跟方向鍵搭配選文字, 也跟 R1 (Return) 搭配組成 Shift+Enter |
+| R1 | Return | 確認 / 換行 |
+| L2 | Cmd+C | 複製 |
+| R2 | Cmd+V | 貼上 |
+| L3 | Cmd+Z | Undo |
+| R3 | 滑鼠右鍵 | Context menu |
+| D-pad ↑↓←→ | 方向鍵 | UI 導航 / 文字游標 |
+| Options (右上小鈕) | RightCmd | 按住搭配實體鍵盤組合 Cmd 快捷鍵 |
+| Create (左上小鈕) | LeftCmd | 同上, 慣用左 Cmd 的人選這顆 |
+| 左搖桿 | 滑鼠移動 | `mouseSpeed: 25` |
+| 右搖桿 | 滾輪捲動 | `scrollSpeed: 5` |
 
 ### 控制器正面
 
@@ -50,6 +83,25 @@
 ```bash
 make clean && make install
 ```
+
+## 支援的控制器按鈕
+
+下表的 key 用於 `bindings` 物件的 JSON 屬性名。沒列在 config 裡的按鈕會被當成 `none`。
+
+| key | PlayStation | Xbox | 說明 |
+|---|---|---|---|
+| `buttonA` | × Cross | A | 下方面鈕 |
+| `buttonB` | ○ Circle | B | 右方面鈕 |
+| `buttonX` | ■ Square | X | 左方面鈕 |
+| `buttonY` | △ Triangle | Y | 上方面鈕 |
+| `leftShoulder` / `rightShoulder` | L1 / R1 | LB / RB | 上肩鍵 |
+| `leftTrigger` / `rightTrigger` | L2 / R2 | LT / RT | 下扳機 (類比, 觸發點 0.55 / 釋放點 0.45) |
+| `leftThumbstickButton` / `rightThumbstickButton` | L3 / R3 | LS / RS | 按下搖桿 |
+| `dpadUp` / `dpadDown` / `dpadLeft` / `dpadRight` | 方向鍵 | 方向鍵 | |
+| `optionsButton` | Options (右上小鈕) | Menu | 觸控板右上方 |
+| `createButton` | Create (左上小鈕) | View | 觸控板左上方 |
+
+`leftStick` / `rightStick` 屬性接受 `"mouse"`、 `"scroll"`、 `"none"` 三種角色。
 
 ## 支援的按鍵
 

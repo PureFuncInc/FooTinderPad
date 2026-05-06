@@ -4,6 +4,8 @@ enum ControllerButton: String, CaseIterable, Hashable {
     case leftTrigger, rightTrigger
     case leftThumbstickButton, rightThumbstickButton
     case dpadUp, dpadDown, dpadLeft, dpadRight
+    // PS5 Options (Apple framework: buttonMenu) and Create (Apple: buttonOptions).
+    case optionsButton, createButton
 }
 
 enum MouseButton: String, Codable, Hashable {

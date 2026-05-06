@@ -77,6 +77,7 @@ final class ControllerManager {
             pad.leftShoulder, pad.rightShoulder,
             pad.leftThumbstickButton, pad.rightThumbstickButton,
             pad.dpad.up, pad.dpad.down, pad.dpad.left, pad.dpad.right,
+            pad.buttonMenu, pad.buttonOptions,
         ]
         for b in buttons { b?.valueChangedHandler = nil }
         pad.leftTrigger.valueChangedHandler = nil
@@ -110,6 +111,17 @@ final class ControllerManager {
         if let rts = pad.rightThumbstickButton {
             rts.valueChangedHandler = { [weak dispatcher] _, _, pressed in
                 dispatcher?.handleButton(.rightThumbstickButton, pressed: pressed)
+            }
+        }
+
+        // PS5 Options (Apple: buttonMenu) is non-optional; Create (Apple: buttonOptions)
+        // was added in macOS 10.15 and is exposed as optional.
+        pad.buttonMenu.valueChangedHandler = { [weak dispatcher] _, _, pressed in
+            dispatcher?.handleButton(.optionsButton, pressed: pressed)
+        }
+        if let create = pad.buttonOptions {
+            create.valueChangedHandler = { [weak dispatcher] _, _, pressed in
+                dispatcher?.handleButton(.createButton, pressed: pressed)
             }
         }
 

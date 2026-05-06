@@ -1,0 +1,25 @@
+{
+  "deadzone": 0.15,
+  "mouseSpeed": 25,
+  "scrollSpeed": 5,
+  "bindings": {
+    "buttonA": { "type": "mouseButton", "button": "left" },
+    "buttonB": { "type": "key", "key": "Escape" },
+    "buttonX": { "type": "key", "key": "Backspace" },
+    "buttonY": { "type": "key", "key": "Space" },
+    "leftShoulder": { "type": "key", "key": "LeftShift" },
+    "rightShoulder": { "type": "key", "key": "Return" },
+    "leftTrigger": { "type": "key", "key": "Cmd+C" },
+    "rightTrigger": { "type": "key", "key": "Cmd+V" },
+    "leftThumbstickButton": { "type": "key", "key": "Cmd+Z" },
+    "rightThumbstickButton": { "type": "mouseButton", "button": "right" },
+    "dpadUp": { "type": "key", "key": "Up" },
+    "dpadDown": { "type": "key", "key": "Down" },
+    "dpadLeft": { "type": "key", "key": "Left" },
+    "dpadRight": { "type": "key", "key": "Right" },
+    "optionsButton": { "type": "key", "key": "RightCmd" },
+    "createButton": { "type": "key", "key": "LeftCmd" }
+  },
+  "leftStick": "mouse",
+  "rightStick": "scroll"
+}

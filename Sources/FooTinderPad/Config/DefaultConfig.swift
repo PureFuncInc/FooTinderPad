@@ -25,7 +25,9 @@ enum DefaultConfig {
         "dpadUp": { "type": "key", "key": "Up" },
         "dpadDown": { "type": "key", "key": "Down" },
         "dpadLeft": { "type": "key", "key": "Left" },
-        "dpadRight": { "type": "key", "key": "Right" }
+        "dpadRight": { "type": "key", "key": "Right" },
+        "optionsButton": { "type": "none" },
+        "createButton": { "type": "none" }
       }
     }
     """#
