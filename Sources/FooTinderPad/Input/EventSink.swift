@@ -14,9 +14,40 @@ final class CGEventSink: EventSink {
     // zero deltas — no need to guard here too.
     func mouseMove(deltaX: Int, deltaY: Int) {
         let cur = CGEvent(source: nil)?.location ?? .zero
-        let target = CGPoint(x: cur.x + CGFloat(deltaX), y: cur.y + CGFloat(deltaY))
+        let raw = CGPoint(x: cur.x + CGFloat(deltaX), y: cur.y + CGFloat(deltaY))
+        // CGEvent does not auto-clamp mouseCursorPosition to active displays,
+        // so an unclamped target warps the cursor off-screen and "loses" it.
+        let target = Self.clamp(target: raw, displays: Self.activeDisplayBounds())
         let ev = CGEvent(mouseEventSource: nil, mouseType: .mouseMoved, mouseCursorPosition: target, mouseButton: .left)
         ev?.post(tap: .cghidEventTap)
+    }
+
+    static func clamp(target: CGPoint, displays: [CGRect]) -> CGPoint {
+        guard !displays.isEmpty else { return target }
+        if displays.contains(where: { $0.contains(target) }) { return target }
+        var best = target
+        var bestDist = CGFloat.infinity
+        for rect in displays {
+            // maxX/maxY are exclusive; subtract 1 so the cursor stays visible on-screen.
+            let cx = min(max(target.x, rect.minX), rect.maxX - 1)
+            let cy = min(max(target.y, rect.minY), rect.maxY - 1)
+            let dx = cx - target.x
+            let dy = cy - target.y
+            let d = dx * dx + dy * dy
+            if d < bestDist {
+                bestDist = d
+                best = CGPoint(x: cx, y: cy)
+            }
+        }
+        return best
+    }
+
+    private static func activeDisplayBounds() -> [CGRect] {
+        var count: UInt32 = 0
+        guard CGGetActiveDisplayList(0, nil, &count) == .success, count > 0 else { return [] }
+        var ids = [CGDirectDisplayID](repeating: 0, count: Int(count))
+        guard CGGetActiveDisplayList(count, &ids, &count) == .success else { return [] }
+        return ids.prefix(Int(count)).map { CGDisplayBounds($0) }
     }
 
     func mouseButton(_ button: MouseButton, down: Bool) {
