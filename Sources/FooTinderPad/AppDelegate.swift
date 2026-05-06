@@ -6,6 +6,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let log = Logger(subsystem: "com.purefuncinc.FooTinderPad", category: "AppDelegate")
     private let menuBar = MenuBar()
     private let accessibility = AccessibilityGate()
+    private let launchAtLogin = LaunchAtLogin()
     private let configManager = ConfigManager()
     private let sink: EventSink = CGEventSink()
     private lazy var key = KeySynthesizer(sink: sink)
@@ -26,6 +27,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         installEditMenu()
         installMenuBar()
+
+        launchAtLogin.onStateChange = { [weak self] state in
+            self?.menuBar.setLaunchAtLogin(state: state)
+        }
+        menuBar.setLaunchAtLogin(state: launchAtLogin.state)
 
         configManager.onSwap = { [weak self] _ in
             self?.dispatcher.drainHeldInputs()
@@ -87,6 +93,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         menuBar.onAbout = { [weak self] in self?.showAboutPanel() }
         menuBar.onQuit  = { NSApp.terminate(nil) }
+        menuBar.onToggleLaunchAtLogin = { [weak self] in self?.launchAtLogin.handleClick() }
+        menuBar.onMenuWillOpen = { [weak self] in self?.launchAtLogin.refresh() }
     }
 
     private func refreshMenuBarState() {

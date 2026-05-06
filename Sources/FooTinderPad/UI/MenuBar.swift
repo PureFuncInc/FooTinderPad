@@ -1,8 +1,9 @@
 import AppKit
 
-final class MenuBar {
+final class MenuBar: NSObject, NSMenuDelegate {
     private var statusItem: NSStatusItem!
     private var statusLineItem: NSMenuItem!
+    private var launchAtLoginItem: NSMenuItem!
     private var menu: NSMenu!
 
     var onReloadConfig: (() -> Void)?
@@ -10,6 +11,8 @@ final class MenuBar {
     var onOpenConsole: (() -> Void)?
     var onAbout: (() -> Void)?
     var onQuit: (() -> Void)?
+    var onToggleLaunchAtLogin: (() -> Void)?
+    var onMenuWillOpen: (() -> Void)?
 
     enum IconState { case operational, idle, unauthorized }
 
@@ -19,6 +22,7 @@ final class MenuBar {
 
         menu = NSMenu()
         menu.autoenablesItems = false
+        menu.delegate = self
 
         menu.addItem(Self.makeMenuItem(
             title: "About FooTinderPad",
@@ -59,6 +63,16 @@ final class MenuBar {
 
         menu.addItem(.separator())
 
+        launchAtLoginItem = NSMenuItem(
+            title: "Launch at Login",
+            action: #selector(_toggleLaunchAtLogin),
+            keyEquivalent: ""
+        )
+        launchAtLoginItem.target = self
+        menu.addItem(launchAtLoginItem)
+
+        menu.addItem(.separator())
+
         menu.addItem(Self.makeMenuItem(
             title: "Quit",
             systemImage: "power",
@@ -85,8 +99,42 @@ final class MenuBar {
         return item
     }
 
+    private static func enabledImage() -> NSImage? {
+        let palette = NSImage.SymbolConfiguration(paletteColors: [.systemGreen])
+        let size = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
+        return NSImage(systemSymbolName: "checkmark.circle.fill", accessibilityDescription: "Enabled")?
+            .withSymbolConfiguration(size.applying(palette))
+    }
+
+    private static func infoImage() -> NSImage? {
+        let palette = NSImage.SymbolConfiguration(paletteColors: [.systemGray])
+        let size = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
+        return NSImage(systemSymbolName: "info.circle", accessibilityDescription: "Needs attention")?
+            .withSymbolConfiguration(size.applying(palette))
+    }
+
     func setStatusLine(_ text: String) {
         statusLineItem.title = text
+    }
+
+    func setLaunchAtLogin(state: LaunchAtLoginState) {
+        // Always render via image; never use NSMenuItem.state to avoid the macOS-native
+        // checkmark and our green check both showing at once.
+        launchAtLoginItem.state = .off
+        switch state {
+        case .enabled:
+            launchAtLoginItem.image = Self.enabledImage()
+            launchAtLoginItem.toolTip = nil
+        case .disabled:
+            launchAtLoginItem.image = nil
+            launchAtLoginItem.toolTip = nil
+        case .requiresApproval:
+            launchAtLoginItem.image = Self.infoImage()
+            launchAtLoginItem.toolTip = "Approve in System Settings → General → Login Items"
+        case .failed(let msg):
+            launchAtLoginItem.image = Self.infoImage()
+            launchAtLoginItem.toolTip = msg
+        }
     }
 
     func setIcon(_ state: IconState) {
@@ -114,9 +162,16 @@ final class MenuBar {
         button.title = ""
     }
 
+    // MARK: - NSMenuDelegate
+
+    func menuWillOpen(_ menu: NSMenu) {
+        onMenuWillOpen?()
+    }
+
     @objc private func _reload() { onReloadConfig?() }
     @objc private func _reveal() { onRevealConfig?() }
     @objc private func _openConsole() { onOpenConsole?() }
     @objc private func _about() { onAbout?() }
     @objc private func _quit()  { onQuit?() }
+    @objc private func _toggleLaunchAtLogin() { onToggleLaunchAtLogin?() }
 }
