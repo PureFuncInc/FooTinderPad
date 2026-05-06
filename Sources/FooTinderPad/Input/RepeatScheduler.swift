@@ -10,13 +10,15 @@ final class RepeatScheduler {
     private struct Entry {
         let parsedKey: ParsedKey
         let pressTime: TimeInterval
-        var lastEmitTime: TimeInterval
+        // nil means "never emitted yet"; using Optional avoids a sentinel
+        // collision with a legitimate clock value of 0.
+        var lastEmitTime: TimeInterval?
     }
 
     private var held: [ControllerButton: Entry] = [:]
 
     func start(button: ControllerButton, parsedKey: ParsedKey, now: TimeInterval) {
-        held[button] = Entry(parsedKey: parsedKey, pressTime: now, lastEmitTime: 0)
+        held[button] = Entry(parsedKey: parsedKey, pressTime: now, lastEmitTime: nil)
     }
 
     func stop(button: ControllerButton) {
@@ -36,10 +38,10 @@ final class RepeatScheduler {
 
             // First emit after the initial delay; subsequent emits paced by interval.
             let shouldEmit: Bool
-            if entry.lastEmitTime == 0 {
-                shouldEmit = true
+            if let last = entry.lastEmitTime {
+                shouldEmit = (now - last) >= Self.interval - eps
             } else {
-                shouldEmit = (now - entry.lastEmitTime) >= Self.interval - eps
+                shouldEmit = true
             }
             if shouldEmit {
                 emit(button, entry.parsedKey)

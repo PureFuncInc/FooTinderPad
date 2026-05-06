@@ -132,4 +132,18 @@ final class ConfigParserTests: XCTestCase {
         XCTAssertTrue(result.warnings.contains { $0.contains("repeat") && $0.contains("buttonA") })
     }
 
+    func testRepeatTrueOnNonKeyBindingsIsIgnoredWithWarning() throws {
+        let json = #"""
+        { "bindings": {
+            "buttonA": { "type": "none", "repeat": true },
+            "buttonB": { "type": "mouseButton", "button": "left", "repeat": true }
+        } }
+        """#.data(using: .utf8)!
+        let result = try ConfigLoader.load(from: json)
+        XCTAssertEqual(result.config.bindings[.buttonA], ResolvedBinding.none)
+        XCTAssertEqual(result.config.bindings[.buttonB], .mouseButton(.left))
+        XCTAssertTrue(result.warnings.contains { $0.contains("buttonA") && $0.contains("repeat") })
+        XCTAssertTrue(result.warnings.contains { $0.contains("buttonB") && $0.contains("repeat") })
+    }
+
 }

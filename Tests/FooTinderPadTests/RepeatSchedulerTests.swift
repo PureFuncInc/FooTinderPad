@@ -89,4 +89,21 @@ final class RepeatSchedulerTests: XCTestCase {
         scheduler.tick(now: 1.400) { _, _ in emits += 1 }   // 1
         XCTAssertEqual(emits, 1)
     }
+
+    func testFrameDropCoalescesToSingleEmit() {
+        // A long-skipped tick must emit exactly once, not N times.
+        // lastEmitTime advances on emit so missed ticks do not "owe" extra events.
+        let scheduler = RepeatScheduler()
+        var emits = 0
+        scheduler.start(button: .buttonX, parsedKey: backspace, now: 0)
+
+        scheduler.tick(now: 0.400) { _, _ in emits += 1 }   // 1
+        // Skip ~5 seconds — at 33 ms interval that would owe ~140 emits if buggy.
+        scheduler.tick(now: 5.000) { _, _ in emits += 1 }   // 2 (single emit, not 140)
+        XCTAssertEqual(emits, 2)
+
+        // Next tick paced by interval from the catch-up emit.
+        scheduler.tick(now: 5.034) { _, _ in emits += 1 }   // 3
+        XCTAssertEqual(emits, 3)
+    }
 }
