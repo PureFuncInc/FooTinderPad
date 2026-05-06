@@ -104,7 +104,7 @@ final class InputDispatcher {
         switch binding {
         case .none:
             return
-        case .key(let main, let mods):
+        case .key(let main, let mods, _):
             let parsed = ParsedKey(mainKey: main, modifiers: mods)
             if pressed { key.press(parsed) } else { key.release(parsed) }
         case .mouseButton(let b):

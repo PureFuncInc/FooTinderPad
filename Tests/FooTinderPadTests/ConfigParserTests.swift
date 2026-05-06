@@ -1,4 +1,5 @@
 import XCTest
+import Carbon.HIToolbox
 @testable import FooTinderPad
 
 final class ConfigParserTests: XCTestCase {
@@ -94,9 +95,41 @@ final class ConfigParserTests: XCTestCase {
         { "bindings": { "buttonA": { "type": "key", "key": "Space" } } }
         """#.data(using: .utf8)!
         let result = try ConfigLoader.load(from: json)
-        XCTAssertEqual(result.config.bindings[.buttonA], .key(mainKey: 0x31, modifiers: []))
+        XCTAssertEqual(result.config.bindings[.buttonA], .key(mainKey: 0x31, modifiers: [], repeat: false))
         XCTAssertEqual(result.config.bindings[.buttonB], ResolvedBinding.none)
         XCTAssertEqual(result.config.bindings.count, ControllerButton.allCases.count)
+    }
+
+    func testRepeatTrueParses() throws {
+        let json = #"""
+        { "bindings": { "buttonA": { "type": "key", "key": "Backspace", "repeat": true } } }
+        """#.data(using: .utf8)!
+        let result = try ConfigLoader.load(from: json)
+        XCTAssertEqual(result.config.bindings[.buttonA],
+                       .key(mainKey: CGKeyCode(kVK_Delete), modifiers: [], repeat: true))
+        XCTAssertTrue(result.warnings.isEmpty)
+    }
+
+    func testRepeatDefaultsToFalseWhenMissing() throws {
+        let json = #"""
+        { "bindings": { "buttonA": { "type": "key", "key": "Space" } } }
+        """#.data(using: .utf8)!
+        let result = try ConfigLoader.load(from: json)
+        XCTAssertEqual(result.config.bindings[.buttonA],
+                       .key(mainKey: CGKeyCode(kVK_Space), modifiers: [], repeat: false))
+    }
+
+    func testRepeatTrueOnModifierOnlyIsIgnoredWithWarning() throws {
+        let json = #"""
+        { "bindings": { "buttonA": { "type": "key", "key": "LeftShift", "repeat": true } } }
+        """#.data(using: .utf8)!
+        let result = try ConfigLoader.load(from: json)
+        if case let .key(_, _, isRepeat) = result.config.bindings[.buttonA]! {
+            XCTAssertFalse(isRepeat, "repeat must be ignored on modifier-only binding")
+        } else {
+            XCTFail("expected .key binding")
+        }
+        XCTAssertTrue(result.warnings.contains { $0.contains("repeat") && $0.contains("buttonA") })
     }
 
 }

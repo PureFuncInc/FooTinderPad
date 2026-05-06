@@ -25,7 +25,7 @@ struct ResolvedConfig: Equatable {
 }
 
 enum ResolvedBinding: Equatable {
-    case key(mainKey: CGKeyCode?, modifiers: [ModifierKey])
+    case key(mainKey: CGKeyCode?, modifiers: [ModifierKey], repeat: Bool)
     case mouseButton(MouseButton)
     case none
 }
@@ -45,6 +45,7 @@ private struct RawBinding: Decodable {
     let type: String
     let key: String?
     let button: MouseButton?
+    let `repeat`: Bool?
 }
 
 // MARK: - Loader
@@ -91,8 +92,14 @@ enum ConfigLoader {
             }
             switch rawBinding.type {
             case "none":
+                if rawBinding.repeat == true {
+                    warnings.append("\(rawKey): 'repeat' ignored on none binding")
+                }
                 resolved[button] = ResolvedBinding.none
             case "mouseButton":
+                if rawBinding.repeat == true {
+                    warnings.append("\(rawKey): 'repeat' ignored on mouseButton binding")
+                }
                 if let m = rawBinding.button {
                     resolved[button] = .mouseButton(m)
                 } else {
@@ -107,7 +114,12 @@ enum ConfigLoader {
                 }
                 do {
                     let parsed = try KeyParser.parse(keyStr)
-                    resolved[button] = .key(mainKey: parsed.mainKey, modifiers: parsed.modifiers)
+                    var wantsRepeat = rawBinding.repeat ?? false
+                    if wantsRepeat && parsed.mainKey == nil {
+                        warnings.append("\(rawKey): 'repeat' ignored on modifier-only binding")
+                        wantsRepeat = false
+                    }
+                    resolved[button] = .key(mainKey: parsed.mainKey, modifiers: parsed.modifiers, repeat: wantsRepeat)
                 } catch {
                     warnings.append("\(rawKey): could not parse '\(keyStr)' (\(error)) — set to none")
                     resolved[button] = ResolvedBinding.none
