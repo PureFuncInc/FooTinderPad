@@ -29,6 +29,13 @@ final class KeySynthesizer {
         for m in k.modifiers.reversed() { releaseMod(m) }
     }
 
+    /// Re-emits only the main key's keyDown with the autorepeat flag set, leaving
+    /// modifier ref-counts untouched. Used by RepeatScheduler for held-key auto-repeat.
+    func repeatPress(_ k: ParsedKey) {
+        guard let main = k.mainKey else { return }
+        sink.keyEvent(keyCode: main, down: true, flags: currentFlags(), autorepeat: true)
+    }
+
     /// Releases every held key + modifier. Used on config swap and controller switch.
     func drain() {
         for key in heldMainKeys {

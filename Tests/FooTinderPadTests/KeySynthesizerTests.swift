@@ -113,4 +113,49 @@ final class KeySynthesizerTests: XCTestCase {
         XCTAssertTrue(names.contains(where: { $0 == (returnKeyCode, false) }))
         XCTAssertTrue(names.contains(where: { $0 == (altKeyCode, false) }))
     }
+
+    func testRepeatPressEmitsOnlyMainKeyWithAutorepeat() {
+        let sink = RecordingSink()
+        let synth = KeySynthesizer(sink: sink)
+        let key = ParsedKey(mainKey: CGKeyCode(kVK_Delete), modifiers: [])
+
+        synth.press(key)
+        sink.actions.removeAll()
+        synth.repeatPress(key)
+
+        XCTAssertEqual(sink.actions, [
+            .keyEvent(CGKeyCode(kVK_Delete), true, [], true),
+        ])
+    }
+
+    func testRepeatPressKeepsModifierAcquiredButOnlyResendsMainKey() {
+        let sink = RecordingSink()
+        let synth = KeySynthesizer(sink: sink)
+        let combo = ParsedKey(mainKey: CGKeyCode(kVK_DownArrow), modifiers: [.leftShift])
+
+        synth.press(combo)
+        sink.actions.removeAll()
+        synth.repeatPress(combo)
+        synth.release(combo)
+
+        // Repeat must NOT re-send the Shift keyDown, but the Shift FLAG must
+        // still be on the repeated DownArrow event because Shift is held.
+        XCTAssertEqual(sink.actions, [
+            .keyEvent(CGKeyCode(kVK_DownArrow), true, .maskShift, true),     // repeat
+            .keyEvent(CGKeyCode(kVK_DownArrow), false, .maskShift, false),   // release main
+            .keyEvent(CGKeyCode(kVK_Shift), false, [], false),               // release modifier
+        ])
+    }
+
+    func testRepeatPressOnModifierOnlyIsNoOp() {
+        let sink = RecordingSink()
+        let synth = KeySynthesizer(sink: sink)
+        let modOnly = ParsedKey(mainKey: nil, modifiers: [.leftCtrl])
+
+        synth.press(modOnly)
+        sink.actions.removeAll()
+        synth.repeatPress(modOnly)
+
+        XCTAssertEqual(sink.actions, [], "modifier-only ParsedKey has no main key to repeat")
+    }
 }
