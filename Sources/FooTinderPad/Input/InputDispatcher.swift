@@ -60,22 +60,33 @@ final class InputDispatcher {
         leftStick.deadzone = cfg.deadzone
         rightStick.deadzone = cfg.deadzone
         let scale = dt * 60
-        emit(role: cfg.leftStick, x: lastLeftX, y: lastLeftY, speedMouse: cfg.mouseSpeed, speedScroll: cfg.scrollSpeed, processor: &leftStick, tickScale: scale)
-        emit(role: cfg.rightStick, x: lastRightX, y: lastRightY, speedMouse: cfg.mouseSpeed, speedScroll: cfg.scrollSpeed, processor: &rightStick, tickScale: scale)
+        emit(role: cfg.leftStick,
+             x: lastLeftX, y: lastLeftY,
+             speedMouse: cfg.mouseSpeed, curveMouse: cfg.mouseCurve,
+             speedScroll: cfg.scrollSpeed, curveScroll: cfg.scrollCurve,
+             processor: &leftStick, tickScale: scale)
+        emit(role: cfg.rightStick,
+             x: lastRightX, y: lastRightY,
+             speedMouse: cfg.mouseSpeed, curveMouse: cfg.mouseCurve,
+             speedScroll: cfg.scrollSpeed, curveScroll: cfg.scrollCurve,
+             processor: &rightStick, tickScale: scale)
     }
 
-    private func emit(role: StickRole, x: Double, y: Double, speedMouse: Double, speedScroll: Double, processor: inout StickProcessor, tickScale: Double) {
+    private func emit(role: StickRole, x: Double, y: Double,
+                      speedMouse: Double, curveMouse: Double,
+                      speedScroll: Double, curveScroll: Double,
+                      processor: inout StickProcessor, tickScale: Double) {
         switch role {
         case .none:
             return
         case .mouse:
             let out = processor.tick(x: x, y: y, speed: speedMouse,
-                                     curve: 1.0,
+                                     curve: curveMouse,
                                      tickScale: tickScale, invertY: true)
             mouse.move(deltaX: out.deltaX, deltaY: out.deltaY)
         case .scroll:
             let out = processor.tick(x: x, y: y, speed: speedScroll,
-                                     curve: 1.0,
+                                     curve: curveScroll,
                                      tickScale: tickScale, invertY: false)
             mouse.scroll(deltaX: out.deltaX, deltaY: out.deltaY)
         }
