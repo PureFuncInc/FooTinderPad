@@ -92,7 +92,7 @@ final class MenuBar {
     func setIcon(_ state: IconState) {
         guard let button = statusItem?.button else { return }
         let size = NSImage.SymbolConfiguration(pointSize: 18, weight: .regular, scale: .medium)
-        let base = NSImage(systemSymbolName: "square.stack.3d.up", accessibilityDescription: nil)
+        let base = NSImage(systemSymbolName: "gamecontroller", accessibilityDescription: nil)
         switch state {
         case .operational:
             // template = true so macOS auto-tints to the menu bar foreground colour
