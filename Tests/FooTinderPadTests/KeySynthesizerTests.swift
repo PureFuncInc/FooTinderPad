@@ -12,8 +12,8 @@ final class KeySynthesizerTests: XCTestCase {
         synth.release(ParsedKey(mainKey: CGKeyCode(kVK_Space), modifiers: []))
 
         XCTAssertEqual(sink.actions, [
-            .keyEvent(CGKeyCode(kVK_Space), true, []),
-            .keyEvent(CGKeyCode(kVK_Space), false, []),
+            .keyEvent(CGKeyCode(kVK_Space), true, [], false),
+            .keyEvent(CGKeyCode(kVK_Space), false, [], false),
         ])
     }
 
@@ -26,10 +26,10 @@ final class KeySynthesizerTests: XCTestCase {
         synth.release(combo)
 
         XCTAssertEqual(sink.actions, [
-            .keyEvent(CGKeyCode(kVK_Option), true, .maskAlternate),
-            .keyEvent(CGKeyCode(kVK_Return), true, .maskAlternate),
-            .keyEvent(CGKeyCode(kVK_Return), false, .maskAlternate),
-            .keyEvent(CGKeyCode(kVK_Option), false, []),
+            .keyEvent(CGKeyCode(kVK_Option), true, .maskAlternate, false),
+            .keyEvent(CGKeyCode(kVK_Return), true, .maskAlternate, false),
+            .keyEvent(CGKeyCode(kVK_Return), false, .maskAlternate, false),
+            .keyEvent(CGKeyCode(kVK_Option), false, [], false),
         ])
     }
 
@@ -46,9 +46,9 @@ final class KeySynthesizerTests: XCTestCase {
 
         // Find Alt down/up events
         let altKeyCode = CGKeyCode(kVK_Option)
-        let altDowns = sink.actions.filter { $0 == .keyEvent(altKeyCode, true, .maskAlternate) }
+        let altDowns = sink.actions.filter { $0 == .keyEvent(altKeyCode, true, .maskAlternate, false) }
         let altUps   = sink.actions.filter {
-            if case let .keyEvent(c, down, _) = $0 { return c == altKeyCode && down == false }
+            if case let .keyEvent(c, down, _, _) = $0 { return c == altKeyCode && down == false }
             return false
         }
         XCTAssertEqual(altDowns.count, 1, "Alt keyDown should be sent only once")
@@ -64,8 +64,8 @@ final class KeySynthesizerTests: XCTestCase {
         synth.release(modOnly)
 
         XCTAssertEqual(sink.actions, [
-            .keyEvent(CGKeyCode(kVK_RightShift), true, .maskShift),
-            .keyEvent(CGKeyCode(kVK_RightShift), false, []),
+            .keyEvent(CGKeyCode(kVK_RightShift), true, .maskShift, false),
+            .keyEvent(CGKeyCode(kVK_RightShift), false, [], false),
         ])
     }
 
@@ -77,7 +77,7 @@ final class KeySynthesizerTests: XCTestCase {
         // Release without prior press: must not crash, must emit no Alt keyUp
         synth.release(altReturn)
         let altUps = sink.actions.contains { action in
-            if case let .keyEvent(_, down, _) = action { return down == false }
+            if case let .keyEvent(_, down, _, _) = action { return down == false }
             return false
         }
         XCTAssertFalse(altUps, "no key events when releasing without prior press")
@@ -92,8 +92,8 @@ final class KeySynthesizerTests: XCTestCase {
         synth.release(combo)
 
         XCTAssertEqual(sink.actions, [
-            .keyEvent(CGKeyCode(kVK_UpArrow), true, .maskSecondaryFn),
-            .keyEvent(CGKeyCode(kVK_UpArrow), false, .maskSecondaryFn),
+            .keyEvent(CGKeyCode(kVK_UpArrow), true, .maskSecondaryFn, false),
+            .keyEvent(CGKeyCode(kVK_UpArrow), false, .maskSecondaryFn, false),
         ])
     }
 
@@ -107,7 +107,7 @@ final class KeySynthesizerTests: XCTestCase {
         let altKeyCode = CGKeyCode(kVK_Option)
         let returnKeyCode = CGKeyCode(kVK_Return)
         let names = sink.actions.compactMap { action -> (CGKeyCode, Bool)? in
-            if case let .keyEvent(c, down, _) = action { return (c, down) }
+            if case let .keyEvent(c, down, _, _) = action { return (c, down) }
             return nil
         }
         XCTAssertTrue(names.contains(where: { $0 == (returnKeyCode, false) }))

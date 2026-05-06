@@ -7,7 +7,7 @@ final class RecordingSink: EventSink {
         case mouseMove(Int, Int)
         case mouseButton(MouseButton, Bool)
         case scroll(Int, Int)
-        case keyEvent(CGKeyCode, Bool, CGEventFlags)
+        case keyEvent(CGKeyCode, Bool, CGEventFlags, Bool)
     }
 
     var actions: [Action] = []
@@ -15,8 +15,8 @@ final class RecordingSink: EventSink {
     func mouseMove(deltaX: Int, deltaY: Int)            { actions.append(.mouseMove(deltaX, deltaY)) }
     func mouseButton(_ button: MouseButton, down: Bool) { actions.append(.mouseButton(button, down)) }
     func scroll(deltaX: Int, deltaY: Int)               { actions.append(.scroll(deltaX, deltaY)) }
-    func keyEvent(keyCode: CGKeyCode, down: Bool, flags: CGEventFlags) {
-        actions.append(.keyEvent(keyCode, down, flags))
+    func keyEvent(keyCode: CGKeyCode, down: Bool, flags: CGEventFlags, autorepeat: Bool) {
+        actions.append(.keyEvent(keyCode, down, flags, autorepeat))
     }
 }
 

@@ -16,14 +16,14 @@ final class KeySynthesizer {
     func press(_ k: ParsedKey) {
         for m in k.modifiers { acquire(m) }
         if let main = k.mainKey {
-            sink.keyEvent(keyCode: main, down: true, flags: currentFlags())
+            sink.keyEvent(keyCode: main, down: true, flags: currentFlags(), autorepeat: false)
             heldMainKeys.insert(main)
         }
     }
 
     func release(_ k: ParsedKey) {
         if let main = k.mainKey, heldMainKeys.contains(main) {
-            sink.keyEvent(keyCode: main, down: false, flags: currentFlags())
+            sink.keyEvent(keyCode: main, down: false, flags: currentFlags(), autorepeat: false)
             heldMainKeys.remove(main)
         }
         for m in k.modifiers.reversed() { releaseMod(m) }
@@ -32,7 +32,7 @@ final class KeySynthesizer {
     /// Releases every held key + modifier. Used on config swap and controller switch.
     func drain() {
         for key in heldMainKeys {
-            sink.keyEvent(keyCode: key, down: false, flags: currentFlags())
+            sink.keyEvent(keyCode: key, down: false, flags: currentFlags(), autorepeat: false)
         }
         heldMainKeys.removeAll()
         let snapshot = modCount
@@ -47,7 +47,7 @@ final class KeySynthesizer {
         let prev = modCount[m] ?? 0
         modCount[m] = prev + 1
         if prev == 0, let kc = keyCode(for: m) {
-            sink.keyEvent(keyCode: kc, down: true, flags: currentFlags())
+            sink.keyEvent(keyCode: kc, down: true, flags: currentFlags(), autorepeat: false)
         }
     }
 
@@ -60,7 +60,7 @@ final class KeySynthesizer {
         modCount[m] = prev - 1
         if prev == 1, let kc = keyCode(for: m) {
             // currentFlags() now excludes this modifier because count just dropped to 0
-            sink.keyEvent(keyCode: kc, down: false, flags: currentFlags())
+            sink.keyEvent(keyCode: kc, down: false, flags: currentFlags(), autorepeat: false)
         }
     }
 

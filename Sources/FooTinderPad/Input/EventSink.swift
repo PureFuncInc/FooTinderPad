@@ -5,7 +5,7 @@ protocol EventSink: AnyObject {
     func mouseMove(deltaX: Int, deltaY: Int)
     func mouseButton(_ button: MouseButton, down: Bool)
     func scroll(deltaX: Int, deltaY: Int)
-    func keyEvent(keyCode: CGKeyCode, down: Bool, flags: CGEventFlags)
+    func keyEvent(keyCode: CGKeyCode, down: Bool, flags: CGEventFlags, autorepeat: Bool)
 }
 
 final class CGEventSink: EventSink {
@@ -75,9 +75,12 @@ final class CGEventSink: EventSink {
         ev?.post(tap: .cghidEventTap)
     }
 
-    func keyEvent(keyCode: CGKeyCode, down: Bool, flags: CGEventFlags) {
+    func keyEvent(keyCode: CGKeyCode, down: Bool, flags: CGEventFlags, autorepeat: Bool) {
         guard let ev = CGEvent(keyboardEventSource: nil, virtualKey: keyCode, keyDown: down) else { return }
         ev.flags = flags
+        if autorepeat {
+            ev.setIntegerValueField(.keyboardEventAutorepeat, value: 1)
+        }
         ev.post(tap: .cghidEventTap)
     }
 }
