@@ -75,27 +75,27 @@ final class StickProcessorTests: XCTestCase {
     }
 
     // Mid-range deflection with curve=2.0 is squared, not linear.
-    // Pick x so n = 0.5 after deadzone removal: n = (mag - 0.15) / 0.85 = 0.5
-    // → mag = 0.575. With curve=2, n_curved = 0.25 → emit ≈ 0.25 * speed.
+    // Use deadzone=0 and x=0.5 so n=0.5 exactly (no FP drift).
+    // pow(0.5, 2) = 0.25 → per-tick contribution 0.25 * 100 = 25.
     func testCurveTwoCompressesMidRange() {
-        var p = StickProcessor(deadzone: 0.15)
+        var p = StickProcessor(deadzone: 0)
         var total = 0
-        // accumulate over many ticks to remove rounding noise
         for _ in 0..<100 {
-            let out = p.tick(x: 0.575, y: 0.0, speed: 100, curve: 2.0,
+            let out = p.tick(x: 0.5, y: 0.0, speed: 100, curve: 2.0,
                              tickScale: 1, invertY: true)
             total += out.deltaX
         }
-        // 100 ticks * 0.25 * 100 speed = 2500
+        // 100 ticks * 0.25 * 100 = 2500
         XCTAssertEqual(total, 2500)
     }
 
-    // And with curve=1.0 the same input must give the linear answer (~ 0.5 * 100).
+    // And with curve=1.0 the same input is linear: per-tick contribution
+    // 0.5 * 100 = 50, over 100 ticks → 5000.
     func testCurveOneMidRangeIsLinear() {
-        var p = StickProcessor(deadzone: 0.15)
+        var p = StickProcessor(deadzone: 0)
         var total = 0
         for _ in 0..<100 {
-            let out = p.tick(x: 0.575, y: 0.0, speed: 100, curve: 1.0,
+            let out = p.tick(x: 0.5, y: 0.0, speed: 100, curve: 1.0,
                              tickScale: 1, invertY: true)
             total += out.deltaX
         }

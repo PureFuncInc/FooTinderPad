@@ -31,8 +31,8 @@ struct StickProcessor {
         accumX += nx * speed * tickScale
         accumY += (invertY ? -1 : 1) * ny * speed * tickScale
 
-        let emitX = Int(accumX.rounded())
-        let emitY = Int(accumY.rounded())
+        let emitX = Int(accumX.rounded(.towardZero))
+        let emitY = Int(accumY.rounded(.towardZero))
         accumX -= Double(emitX)
         accumY -= Double(emitY)
 
