@@ -14,7 +14,7 @@ final class InputDispatcher {
     /// Response curves for the stick → mouse / scroll mapping. Hardcoded
     /// internal tuning parameters; not exposed via JSON config. To adjust the
     /// feel, edit these constants and rebuild.
-    private static let mouseCurve: Double = 2.0
+    private static let mouseCurve: Double = 4.0
     private static let scrollCurve: Double = 1.0
 
     private let configProvider: () -> ResolvedConfig
