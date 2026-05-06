@@ -8,7 +8,9 @@ enum DefaultConfig {
     {
       "deadzone": 0.15,
       "mouseSpeed": 15,
+      "mouseCurve": 2.0,
       "scrollSpeed": 5,
+      "scrollCurve": 1.0,
       "leftStick": "mouse",
       "rightStick": "scroll",
       "bindings": {
