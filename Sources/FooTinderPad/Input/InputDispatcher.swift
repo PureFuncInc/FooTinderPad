@@ -11,6 +11,12 @@ struct TriggerHysteresis {
 }
 
 final class InputDispatcher {
+    /// Response curves for the stick → mouse / scroll mapping. Hardcoded
+    /// internal tuning parameters; not exposed via JSON config. To adjust the
+    /// feel, edit these constants and rebuild.
+    private static let mouseCurve: Double = 2.0
+    private static let scrollCurve: Double = 1.0
+
     private let configProvider: () -> ResolvedConfig
     private let key: KeySynthesizer
     private let mouse: MouseSynthesizer
@@ -60,33 +66,28 @@ final class InputDispatcher {
         leftStick.deadzone = cfg.deadzone
         rightStick.deadzone = cfg.deadzone
         let scale = dt * 60
-        emit(role: cfg.leftStick,
-             x: lastLeftX, y: lastLeftY,
-             speedMouse: cfg.mouseSpeed, curveMouse: cfg.mouseCurve,
-             speedScroll: cfg.scrollSpeed, curveScroll: cfg.scrollCurve,
+        emit(role: cfg.leftStick, x: lastLeftX, y: lastLeftY,
+             speedMouse: cfg.mouseSpeed, speedScroll: cfg.scrollSpeed,
              processor: &leftStick, tickScale: scale)
-        emit(role: cfg.rightStick,
-             x: lastRightX, y: lastRightY,
-             speedMouse: cfg.mouseSpeed, curveMouse: cfg.mouseCurve,
-             speedScroll: cfg.scrollSpeed, curveScroll: cfg.scrollCurve,
+        emit(role: cfg.rightStick, x: lastRightX, y: lastRightY,
+             speedMouse: cfg.mouseSpeed, speedScroll: cfg.scrollSpeed,
              processor: &rightStick, tickScale: scale)
     }
 
     private func emit(role: StickRole, x: Double, y: Double,
-                      speedMouse: Double, curveMouse: Double,
-                      speedScroll: Double, curveScroll: Double,
+                      speedMouse: Double, speedScroll: Double,
                       processor: inout StickProcessor, tickScale: Double) {
         switch role {
         case .none:
             return
         case .mouse:
             let out = processor.tick(x: x, y: y, speed: speedMouse,
-                                     curve: curveMouse,
+                                     curve: Self.mouseCurve,
                                      tickScale: tickScale, invertY: true)
             mouse.move(deltaX: out.deltaX, deltaY: out.deltaY)
         case .scroll:
             let out = processor.tick(x: x, y: y, speed: speedScroll,
-                                     curve: curveScroll,
+                                     curve: Self.scrollCurve,
                                      tickScale: tickScale, invertY: false)
             mouse.scroll(deltaX: out.deltaX, deltaY: out.deltaY)
         }
