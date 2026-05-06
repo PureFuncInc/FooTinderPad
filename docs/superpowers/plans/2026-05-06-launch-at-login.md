@@ -555,7 +555,7 @@ git commit -m "docs: document Launch at Login menu option"
 
 ---
 
-## Definition of Done
+## Definition of Done (r1)
 
 - `swift test --filter LaunchAtLoginTests` — 4 tests pass.
 - `swift test` — all existing tests still pass (Tasks 3–4 are additive; no behavior changes elsewhere).
@@ -564,3 +564,371 @@ git commit -m "docs: document Launch at Login menu option"
 - Manual smoke test blocks 1 and 2 in Task 4 both pass on the developer's machine.
 - README has the new subsection.
 - Five commits land on the branch (one per task).
+
+---
+
+# r2 — LaunchAgent fallback + softer visuals
+
+Spec revision: `docs/superpowers/specs/2026-05-06-launch-at-login-design.md` r2.
+
+**Why r2 exists:** real-world testing of the r1 build on a developer machine (self-signed `FooTinderPadDev` cert, no Team Identifier) showed `SMAppService.mainApp.status == .notFound` with no path to actually enable launch-at-login through the SMAppService API. r2 adds a LaunchAgent plist fallback so self-signed builds work too. The yellow-triangle warning is also replaced with softer visuals (green checkmark for enabled, gray info icon for warning states) — the original triangle was overly alarming for what is now usually a transparent fallback.
+
+---
+
+### Task 6: Add LaunchAgent fallback to `LaunchAtLogin`
+
+**Files:**
+- Modify: `Sources/FooTinderPad/System/LaunchAtLogin.swift`
+- Modify: `Tests/FooTinderPadTests/LaunchAtLoginTests.swift`
+
+This task expands `LaunchAtLogin` with: an injectable `plistURL` (default → real path under `~/Library/LaunchAgents`), plist-first state read, a static `writePlist(at:executablePath:)` helper, fallback logic in `handleClick().enable`, plist removal in `handleClick().disable`. The pure `action(for:)` helper and `LaunchAtLoginAction` enum are unchanged. The `LaunchAtLoginState` enum is unchanged. The `.notFound` mapping changes from `.failed("login item not found")` to `.disabled` so the fallback handles the actual mechanism choice on click.
+
+We follow TDD where it pays off: the plist filesystem behavior is testable via injected URL pointing to a temp directory. The SMAppService fallback edge (try register → if .notFound, write plist) is exercised by manual smoke test, matching the project's pragmatic stance on system-API wrappers.
+
+- [ ] **Step 1: Write the new failing tests**
+
+Append to `Tests/FooTinderPadTests/LaunchAtLoginTests.swift` (keep the 4 existing tests for `action(for:)` intact):
+
+```swift
+import Foundation
+
+extension LaunchAtLoginTests {
+    private func tempPlistURL() -> URL {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ftp-test-\(UUID().uuidString)", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir.appendingPathComponent("com.purefuncinc.FooTinderPad.plist")
+    }
+
+    func testReadStateWhenPlistExistsReturnsEnabled() throws {
+        let url = tempPlistURL()
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+
+        // Write any non-empty file; readState() only checks existence.
+        try Data("placeholder".utf8).write(to: url)
+
+        let lal = LaunchAtLogin(plistURL: url)
+        XCTAssertEqual(lal.state, .enabled)
+    }
+
+    func testReadStateWhenPlistAbsentDoesNotCrash() {
+        // We don't assert exact value — depends on real SMAppService.mainApp.status on this
+        // machine — but we DO assert init doesn't throw and returns a valid LaunchAtLoginState.
+        let url = tempPlistURL()
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+
+        let lal = LaunchAtLogin(plistURL: url)
+        // Just touch the property to ensure it was set:
+        _ = lal.state
+    }
+
+    func testWritePlistEmitsExpectedKeys() throws {
+        let url = tempPlistURL()
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+
+        try LaunchAtLogin.writePlist(at: url, executablePath: "/Applications/FooTinderPad.app/Contents/MacOS/FooTinderPad")
+
+        let data = try Data(contentsOf: url)
+        let parsed = try PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any]
+        XCTAssertEqual(parsed?["Label"] as? String, "com.purefuncinc.FooTinderPad")
+        XCTAssertEqual(parsed?["RunAtLoad"] as? Bool, true)
+        XCTAssertEqual(parsed?["KeepAlive"] as? Bool, false)
+        XCTAssertEqual(parsed?["ProgramArguments"] as? [String], ["/Applications/FooTinderPad.app/Contents/MacOS/FooTinderPad"])
+    }
+
+    func testRemovePlistIsIdempotentWhenAbsent() throws {
+        let url = tempPlistURL()
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+
+        // Plist deliberately not created. removePlist should be a no-op (no throw).
+        XCTAssertNoThrow(try LaunchAtLogin.removePlistIfPresent(at: url))
+    }
+}
+```
+
+- [ ] **Step 2: Run tests to verify they fail**
+
+Run: `swift test --filter LaunchAtLoginTests`
+Expected: build error. The tests reference `init(plistURL:)`, `LaunchAtLogin.writePlist(at:executablePath:)`, and `LaunchAtLogin.removePlistIfPresent(at:)` which don't exist yet.
+
+- [ ] **Step 3: Replace `LaunchAtLogin.swift` with the r2 version**
+
+Overwrite `Sources/FooTinderPad/System/LaunchAtLogin.swift` with:
+
+```swift
+import AppKit
+import ServiceManagement
+import os
+
+enum LaunchAtLoginState: Equatable {
+    case enabled
+    case disabled
+    case requiresApproval
+    case failed(String)
+}
+
+enum LaunchAtLoginAction: Equatable {
+    case enable
+    case disable
+    case openSystemSettings
+}
+
+enum LaunchAtLoginError: Error, LocalizedError {
+    case noExecutablePath
+    var errorDescription: String? {
+        switch self {
+        case .noExecutablePath: return "could not resolve app executable path"
+        }
+    }
+}
+
+final class LaunchAtLogin {
+    private let log = Logger(subsystem: "com.purefuncinc.FooTinderPad", category: "LaunchAtLogin")
+    private let plistURL: URL
+    private(set) var state: LaunchAtLoginState
+
+    /// Called on the main queue every time `state` transitions.
+    var onStateChange: ((LaunchAtLoginState) -> Void)?
+
+    static let defaultPlistURL: URL = {
+        FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/LaunchAgents/com.purefuncinc.FooTinderPad.plist")
+    }()
+
+    init(plistURL: URL = LaunchAtLogin.defaultPlistURL) {
+        self.plistURL = plistURL
+        self.state = Self.readState(plistURL: plistURL)
+        log.info("initial launch-at-login state: \(String(describing: self.state), privacy: .public)")
+    }
+
+    /// Re-reads state. Plist-first (LaunchAgent path wins if present), else SMAppService.
+    func refresh() {
+        let next = Self.readState(plistURL: plistURL)
+        guard next != state else { return }
+        log.info("launch-at-login state changed: \(String(describing: next), privacy: .public)")
+        state = next
+        onStateChange?(next)
+    }
+
+    /// State-aware click dispatch with SMAppService → LaunchAgent fallback on enable.
+    func handleClick() {
+        switch Self.action(for: state) {
+        case .enable:
+            var smaSucceeded = false
+            do {
+                try SMAppService.mainApp.register()
+                switch SMAppService.mainApp.status {
+                case .enabled, .requiresApproval:
+                    smaSucceeded = true
+                default:
+                    smaSucceeded = false
+                }
+            } catch {
+                log.info("SMAppService.register failed (\(error.localizedDescription, privacy: .public)); falling back to LaunchAgent plist")
+                smaSucceeded = false
+            }
+            if !smaSucceeded {
+                guard let exec = Bundle.main.executableURL?.path else {
+                    log.error("no executable path; cannot write plist")
+                    state = .failed(LaunchAtLoginError.noExecutablePath.localizedDescription)
+                    onStateChange?(state)
+                    return
+                }
+                do {
+                    try Self.writePlist(at: plistURL, executablePath: exec)
+                } catch {
+                    log.error("plist write failed: \(error.localizedDescription, privacy: .public)")
+                    state = .failed(error.localizedDescription)
+                    onStateChange?(state)
+                    return
+                }
+            }
+            refresh()
+
+        case .disable:
+            do {
+                try Self.removePlistIfPresent(at: plistURL)
+            } catch {
+                log.error("plist remove failed: \(error.localizedDescription, privacy: .public)")
+                state = .failed(error.localizedDescription)
+                onStateChange?(state)
+                return
+            }
+            try? SMAppService.mainApp.unregister()  // best-effort
+            refresh()
+
+        case .openSystemSettings:
+            SMAppService.openSystemSettingsLoginItems()
+        }
+    }
+
+    static func action(for state: LaunchAtLoginState) -> LaunchAtLoginAction {
+        switch state {
+        case .disabled:                      return .enable
+        case .enabled:                       return .disable
+        case .requiresApproval, .failed:     return .openSystemSettings
+        }
+    }
+
+    /// Reads state with plist-first priority. Internal so tests can call directly.
+    static func readState(plistURL: URL) -> LaunchAtLoginState {
+        if FileManager.default.fileExists(atPath: plistURL.path) {
+            return .enabled
+        }
+        switch SMAppService.mainApp.status {
+        case .enabled:           return .enabled
+        case .notRegistered:     return .disabled
+        case .notFound:          return .disabled  // self-signed: looks "off, can enable" — fallback handles enable
+        case .requiresApproval:  return .requiresApproval
+        @unknown default:        return .failed("unknown SMAppService status")
+        }
+    }
+
+    /// Writes the LaunchAgent plist atomically, creating parent directories as needed.
+    static func writePlist(at url: URL, executablePath: String) throws {
+        let dir = url.deletingLastPathComponent()
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let content: [String: Any] = [
+            "Label": "com.purefuncinc.FooTinderPad",
+            "ProgramArguments": [executablePath],
+            "RunAtLoad": true,
+            "KeepAlive": false,
+        ]
+        let data = try PropertyListSerialization.data(
+            fromPropertyList: content, format: .xml, options: 0)
+        try data.write(to: url, options: .atomic)
+    }
+
+    /// Removes the plist if present. No-op when absent (idempotent).
+    static func removePlistIfPresent(at url: URL) throws {
+        guard FileManager.default.fileExists(atPath: url.path) else { return }
+        try FileManager.default.removeItem(at: url)
+    }
+}
+```
+
+- [ ] **Step 4: Run tests to verify they pass**
+
+Run: `swift test --filter LaunchAtLoginTests`
+Expected: 8 tests pass (4 existing + 4 new).
+
+- [ ] **Step 5: Run the full test suite to confirm no regression**
+
+Run: `swift test`
+Expected: 86 tests pass (was 82; +4 new).
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add Sources/FooTinderPad/System/LaunchAtLogin.swift Tests/FooTinderPadTests/LaunchAtLoginTests.swift
+git commit -m "feat: add LaunchAgent fallback to LaunchAtLogin"
+```
+
+---
+
+### Task 7: Update `MenuBar` visuals — green checkmark + gray info icon
+
+**Files:**
+- Modify: `Sources/FooTinderPad/UI/MenuBar.swift`
+
+Drop the `NSMenuItem.state = .on/.off` usage; render all four `LaunchAtLoginState` cases via image only. Replace the yellow `exclamationmark.triangle.fill` warning with a gray `info.circle`.
+
+- [ ] **Step 1: Update `MenuBar.swift`**
+
+In `Sources/FooTinderPad/UI/MenuBar.swift`:
+
+(a) Replace the existing `warningImage()` static helper (around line 102–107) with:
+
+```swift
+    private static func enabledImage() -> NSImage? {
+        let palette = NSImage.SymbolConfiguration(paletteColors: [.systemGreen])
+        let size = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
+        return NSImage(systemSymbolName: "checkmark.circle.fill", accessibilityDescription: "Enabled")?
+            .withSymbolConfiguration(size.applying(palette))
+    }
+
+    private static func infoImage() -> NSImage? {
+        let palette = NSImage.SymbolConfiguration(paletteColors: [.systemGray])
+        let size = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
+        return NSImage(systemSymbolName: "info.circle", accessibilityDescription: "Needs attention")?
+            .withSymbolConfiguration(size.applying(palette))
+    }
+```
+
+(b) Replace the body of `setLaunchAtLogin(state:)` (around lines 113–132) with:
+
+```swift
+    func setLaunchAtLogin(state: LaunchAtLoginState) {
+        // Always render via image; never use NSMenuItem.state to avoid the macOS-native
+        // checkmark and our green check both showing at once.
+        launchAtLoginItem.state = .off
+        switch state {
+        case .enabled:
+            launchAtLoginItem.image = Self.enabledImage()
+            launchAtLoginItem.toolTip = nil
+        case .disabled:
+            launchAtLoginItem.image = nil
+            launchAtLoginItem.toolTip = nil
+        case .requiresApproval:
+            launchAtLoginItem.image = Self.infoImage()
+            launchAtLoginItem.toolTip = "Approve in System Settings → General → Login Items"
+        case .failed(let msg):
+            launchAtLoginItem.image = Self.infoImage()
+            launchAtLoginItem.toolTip = msg
+        }
+    }
+```
+
+No other changes to `MenuBar.swift` (the menu item insertion, callbacks, NSMenuDelegate conformance, and other helpers are all unchanged).
+
+- [ ] **Step 2: Build and run all tests**
+
+Run: `swift build && swift test`
+Expected: build succeeds, 86 tests pass.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add Sources/FooTinderPad/UI/MenuBar.swift
+git commit -m "feat: soften Launch at Login visuals — green check + gray info icon"
+```
+
+---
+
+### Task 8: Document the LaunchAgent fallback in README
+
+**Files:**
+- Modify: `README.md`
+
+Append a paragraph to the existing "Launch at Login" section explaining the fallback behavior on self-signed builds.
+
+- [ ] **Step 1: Append to the existing "Launch at Login" section**
+
+In `README.md`, find the existing `## Launch at Login` section (added in Task 5). Append a third paragraph after the existing two:
+
+```markdown
+若 app 是用本機 self-signed 簽章 (例如預設的 `FooTinderPadDev` cert, 沒有 Apple Developer Team Identifier), `SMAppService` 沒辦法登錄 login item。這時我們會自動 fallback: 寫一份 LaunchAgent plist 到 `~/Library/LaunchAgents/com.purefuncinc.FooTinderPad.plist`, 下次登入由 launchd 啟動 app。要關掉一樣從選單按一次 `Launch at Login` 即可 (我們會把 plist 刪掉)。注意這條路線下,「系統設定 → 一般 → 登入項目」清單不會列出 FooTinderPad — 我們選單上的 toggle 是真實狀態。
+```
+
+- [ ] **Step 2: Commit**
+
+```bash
+git add README.md
+git commit -m "docs: note LaunchAgent fallback for self-signed builds"
+```
+
+---
+
+## Definition of Done (r2)
+
+- `swift test --filter LaunchAtLoginTests` — 8 tests pass.
+- `swift test` — 86 tests pass overall.
+- `swift build` — clean build.
+- `make install` succeeds.
+- Manual smoke test (spec r2 acceptance checklist) passes:
+  - Click toggle → green check appears (no yellow triangle).
+  - On self-signed build: `~/Library/LaunchAgents/com.purefuncinc.FooTinderPad.plist` exists after enable.
+  - Click toggle again → green check disappears, plist file is gone.
+  - Reboot → app auto-launches.
+- README has the fallback paragraph.
+- Three additional commits (one per Task 6/7/8) land on the branch.

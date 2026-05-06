@@ -281,7 +281,7 @@ final class LaunchAtLogin {
 **Plist filesystem behavior (new)** — uses temp directory injected via `init(plistURL:)`:
 
 - `testReadStateWhenPlistExistsReturnsEnabled` — write a sentinel file at the temp `plistURL`, init `LaunchAtLogin`, expect `state == .enabled` (regardless of what SMAppService reports).
-- `testReadStateWhenPlistAbsentDelegatesToSMAppService` — temp `plistURL` doesn't exist, init runs, `state` matches SMAppService status mapping.
+- `testReadStateWhenPlistAbsentDoesNotCrash` — temp `plistURL` doesn't exist, init runs, `state` is read without throwing. We can't strongly assert the resulting value because it depends on the test machine's real `SMAppService.mainApp.status`; the assertion is "init returns a valid `LaunchAtLoginState`".
 - `testWritePlistEmitsExpectedKeys` — call a static `writePlist(at:executablePath:)` (extracted from `writePlist()` for testability), parse the output with `PropertyListSerialization`, assert keys: `Label == "com.purefuncinc.FooTinderPad"`, `RunAtLoad == true`, `KeepAlive == false`, `ProgramArguments == [executablePath]`.
 - `testRemovePlistIsIdempotentWhenAbsent` — call the disable path with no plist present; expect no throw and state stays `.disabled`. (Specifically: deleting a non-existent file should be a no-op rather than throwing.)
 
