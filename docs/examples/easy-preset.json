@@ -9,16 +9,17 @@
     "buttonY": { "type": "key", "key": "Space" },
     "leftShoulder": { "type": "key", "key": "LeftShift" },
     "rightShoulder": { "type": "key", "key": "Return" },
-    "leftTrigger": { "type": "key", "key": "Cmd+C" },
-    "rightTrigger": { "type": "key", "key": "Cmd+V" },
+    "leftTrigger": { "type": "key", "key": "LeftCmd" },
+    "rightTrigger": { "type": "key", "key": "RightCmd" },
     "leftThumbstickButton": { "type": "key", "key": "Cmd+Z" },
     "rightThumbstickButton": { "type": "mouseButton", "button": "right" },
     "dpadUp": { "type": "key", "key": "Up" },
     "dpadDown": { "type": "key", "key": "Down" },
     "dpadLeft": { "type": "key", "key": "Left" },
     "dpadRight": { "type": "key", "key": "Right" },
-    "optionsButton": { "type": "key", "key": "RightCmd" },
-    "createButton": { "type": "key", "key": "LeftCmd" }
+    "optionsButton": { "type": "key", "key": "Cmd+C" },
+    "createButton": { "type": "key", "key": "Cmd+V" },
+    "touchpadButton": { "type": "key", "key": "Fn+Ctrl+Up" }
   },
   "leftStick": "mouse",
   "rightStick": "scroll"

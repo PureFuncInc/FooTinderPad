@@ -27,7 +27,8 @@ enum DefaultConfig {
         "dpadLeft": { "type": "key", "key": "Left" },
         "dpadRight": { "type": "key", "key": "Right" },
         "optionsButton": { "type": "none" },
-        "createButton": { "type": "none" }
+        "createButton": { "type": "none" },
+        "touchpadButton": { "type": "none" }
       }
     }
     """#

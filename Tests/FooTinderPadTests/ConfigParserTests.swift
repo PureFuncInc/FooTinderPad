@@ -36,7 +36,7 @@ final class ConfigParserTests: XCTestCase {
         XCTAssertEqual(result.config.scrollSpeed, 5)
         XCTAssertEqual(result.config.leftStick, .mouse)
         XCTAssertEqual(result.config.rightStick, .scroll)
-        XCTAssertEqual(result.config.bindings.count, 16)
+        XCTAssertEqual(result.config.bindings.count, 17)
         XCTAssertTrue(result.warnings.isEmpty)
     }
 

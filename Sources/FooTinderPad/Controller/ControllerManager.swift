@@ -78,6 +78,7 @@ final class ControllerManager {
             pad.leftThumbstickButton, pad.rightThumbstickButton,
             pad.dpad.up, pad.dpad.down, pad.dpad.left, pad.dpad.right,
             pad.buttonMenu, pad.buttonOptions,
+            Self.touchpadButton(of: pad),
         ]
         for b in buttons { b?.valueChangedHandler = nil }
         pad.leftTrigger.valueChangedHandler = nil
@@ -85,6 +86,14 @@ final class ControllerManager {
         pad.leftThumbstick.valueChangedHandler = nil
         pad.rightThumbstick.valueChangedHandler = nil
         dispatcher?.drainHeldInputs()
+    }
+
+    /// Touchpad click button is only present on PS4 (DualShock) / PS5 (DualSense).
+    /// Returns nil for Xbox and other extended-gamepad-shaped controllers.
+    private static func touchpadButton(of pad: GCExtendedGamepad) -> GCControllerButtonInput? {
+        if let ds = pad as? GCDualSenseGamepad { return ds.touchpadButton }
+        if let ds = pad as? GCDualShockGamepad { return ds.touchpadButton }
+        return nil
     }
 
     private func wire(_ c: GCController) {
@@ -122,6 +131,13 @@ final class ControllerManager {
         if let create = pad.buttonOptions {
             create.valueChangedHandler = { [weak dispatcher] _, _, pressed in
                 dispatcher?.handleButton(.createButton, pressed: pressed)
+            }
+        }
+
+        // PS4/PS5 touchpad click — only on DualShock4 / DualSense.
+        if let touchpad = Self.touchpadButton(of: pad) {
+            touchpad.valueChangedHandler = { [weak dispatcher] _, _, pressed in
+                dispatcher?.handleButton(.touchpadButton, pressed: pressed)
             }
         }
 

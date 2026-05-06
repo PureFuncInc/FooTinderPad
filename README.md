@@ -53,13 +53,14 @@
 | △ Triangle | Space | 影片播放 / 瀏覽器捲頁 |
 | L1 | LeftShift | 跟方向鍵搭配選文字, 也跟 R1 (Return) 搭配組成 Shift+Enter |
 | R1 | Return | 確認 / 換行 |
-| L2 | Cmd+C | 複製 |
-| R2 | Cmd+V | 貼上 |
+| L2 | LeftCmd | 按住搭配實體鍵盤組合 Cmd 快捷鍵 |
+| R2 | RightCmd | 同上, 食指搆得到的位置, 適合右手切換 app |
 | L3 | Cmd+Z | Undo |
 | R3 | 滑鼠右鍵 | Context menu |
 | D-pad ↑↓←→ | 方向鍵 | UI 導航 / 文字游標 |
-| Options (右上小鈕) | RightCmd | 按住搭配實體鍵盤組合 Cmd 快捷鍵 |
-| Create (左上小鈕) | LeftCmd | 同上, 慣用左 Cmd 的人選這顆 |
+| Options (右上小鈕) | Cmd+C | 複製 (拇指容易按到, 比扳機順) |
+| Create (左上小鈕) | Cmd+V | 貼上 |
+| 觸控板按下 | Fn+Ctrl+Up | 呼叫 Mission Control (macOS 內建快捷鍵, 不需額外設定) |
 | 左搖桿 | 滑鼠移動 | `mouseSpeed: 25` |
 | 右搖桿 | 滾輪捲動 | `scrollSpeed: 5` |
 
@@ -100,6 +101,7 @@ make clean && make install
 | `dpadUp` / `dpadDown` / `dpadLeft` / `dpadRight` | 方向鍵 | 方向鍵 | |
 | `optionsButton` | Options (右上小鈕) | Menu | 觸控板右上方 |
 | `createButton` | Create (左上小鈕) | View | 觸控板左上方 |
+| `touchpadButton` | 按下整片觸控板 | — | 僅 PS4 (DualShock4) / PS5 (DualSense) 有, Xbox 無此鈕 |
 
 `leftStick` / `rightStick` 屬性接受 `"mouse"`、 `"scroll"`、 `"none"` 三種角色。
 
