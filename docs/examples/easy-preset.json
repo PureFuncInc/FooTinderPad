@@ -5,7 +5,7 @@
   "bindings": {
     "buttonA": { "type": "mouseButton", "button": "left" },
     "buttonB": { "type": "key", "key": "Escape" },
-    "buttonX": { "type": "key", "key": "Backspace" },
+    "buttonX": { "type": "key", "key": "Backspace", "repeat": true },
     "buttonY": { "type": "key", "key": "Space" },
     "leftShoulder": { "type": "key", "key": "LeftShift" },
     "rightShoulder": { "type": "key", "key": "Return" },
@@ -13,10 +13,10 @@
     "rightTrigger": { "type": "key", "key": "RightCmd" },
     "leftThumbstickButton": { "type": "key", "key": "Cmd+Z" },
     "rightThumbstickButton": { "type": "mouseButton", "button": "right" },
-    "dpadUp": { "type": "key", "key": "Up" },
-    "dpadDown": { "type": "key", "key": "Down" },
-    "dpadLeft": { "type": "key", "key": "Left" },
-    "dpadRight": { "type": "key", "key": "Right" },
+    "dpadUp": { "type": "key", "key": "Up", "repeat": true },
+    "dpadDown": { "type": "key", "key": "Down", "repeat": true },
+    "dpadLeft": { "type": "key", "key": "Left", "repeat": true },
+    "dpadRight": { "type": "key", "key": "Right", "repeat": true },
     "optionsButton": { "type": "key", "key": "Cmd+C" },
     "createButton": { "type": "key", "key": "Cmd+V" },
     "touchpadButton": { "type": "key", "key": "Fn+Ctrl+Up" }
