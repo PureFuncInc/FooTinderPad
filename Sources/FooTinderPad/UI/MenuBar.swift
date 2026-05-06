@@ -7,6 +7,7 @@ final class MenuBar {
 
     var onReloadConfig: (() -> Void)?
     var onRevealConfig: (() -> Void)?
+    var onOpenConsole: (() -> Void)?
     var onAbout: (() -> Void)?
     var onQuit: (() -> Void)?
 
@@ -19,30 +20,69 @@ final class MenuBar {
         menu = NSMenu()
         menu.autoenablesItems = false
 
+        menu.addItem(Self.makeMenuItem(
+            title: "About FooTinderPad",
+            systemImage: "info.circle",
+            target: self,
+            action: #selector(_about)
+        ))
+        menu.addItem(.separator())
+
         statusLineItem = NSMenuItem(title: "No controller", action: nil, keyEquivalent: "")
         statusLineItem.isEnabled = false
         menu.addItem(statusLineItem)
         menu.addItem(.separator())
 
-        let reload = NSMenuItem(title: "Reload Config", action: #selector(_reload), keyEquivalent: "r")
-        reload.target = self
-        menu.addItem(reload)
-
-        let reveal = NSMenuItem(title: "Reveal Config in Finder", action: #selector(_reveal), keyEquivalent: "")
-        reveal.target = self
-        menu.addItem(reveal)
+        let configLogsItem = Self.makeMenuItem(title: "Config & Logs", systemImage: "folder")
+        let configLogsSubmenu = NSMenu()
+        configLogsSubmenu.addItem(Self.makeMenuItem(
+            title: "Reload Config",
+            systemImage: "arrow.clockwise",
+            target: self,
+            action: #selector(_reload),
+            keyEquivalent: "r"
+        ))
+        configLogsSubmenu.addItem(Self.makeMenuItem(
+            title: "Reveal Config in Finder",
+            systemImage: "folder",
+            target: self,
+            action: #selector(_reveal)
+        ))
+        configLogsSubmenu.addItem(Self.makeMenuItem(
+            title: "Open Console.app (filter copied)",
+            systemImage: "text.magnifyingglass",
+            target: self,
+            action: #selector(_openConsole)
+        ))
+        menu.addItem(configLogsItem)
+        menu.setSubmenu(configLogsSubmenu, for: configLogsItem)
 
         menu.addItem(.separator())
 
-        let about = NSMenuItem(title: "About FooTinderPad", action: #selector(_about), keyEquivalent: "")
-        about.target = self
-        menu.addItem(about)
-
-        let quit = NSMenuItem(title: "Quit", action: #selector(_quit), keyEquivalent: "q")
-        quit.target = self
-        menu.addItem(quit)
+        menu.addItem(Self.makeMenuItem(
+            title: "Quit",
+            systemImage: "power",
+            target: self,
+            action: #selector(_quit),
+            keyEquivalent: "q"
+        ))
 
         statusItem.menu = menu
+    }
+
+    private static func makeMenuItem(
+        title: String,
+        systemImage: String,
+        target: AnyObject? = nil,
+        action: Selector? = nil,
+        keyEquivalent: String = ""
+    ) -> NSMenuItem {
+        let item = NSMenuItem(title: title, action: action, keyEquivalent: keyEquivalent)
+        item.target = target
+        let config = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
+        item.image = NSImage(systemSymbolName: systemImage, accessibilityDescription: nil)?
+            .withSymbolConfiguration(config)
+        return item
     }
 
     func setStatusLine(_ text: String) {
@@ -76,6 +116,7 @@ final class MenuBar {
 
     @objc private func _reload() { onReloadConfig?() }
     @objc private func _reveal() { onRevealConfig?() }
+    @objc private func _openConsole() { onOpenConsole?() }
     @objc private func _about() { onAbout?() }
     @objc private func _quit()  { onQuit?() }
 }

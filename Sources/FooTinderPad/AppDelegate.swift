@@ -69,6 +69,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menuBar.onRevealConfig = {
             NSWorkspace.shared.activateFileViewerSelecting([Paths.configURL])
         }
+        menuBar.onOpenConsole = {
+            let pb = NSPasteboard.general
+            pb.clearContents()
+            pb.setString("subsystem:com.purefuncinc.FooTinderPad", forType: .string)
+            NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Utilities/Console.app"))
+        }
         menuBar.onAbout = { [weak self] in self?.showAboutPanel() }
         menuBar.onQuit  = { NSApp.terminate(nil) }
     }
