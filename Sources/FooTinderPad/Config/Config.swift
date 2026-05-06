@@ -6,7 +6,9 @@ import CoreGraphics
 struct ResolvedConfig: Equatable {
     let deadzone: Double
     let mouseSpeed: Double
+    let mouseCurve: Double
     let scrollSpeed: Double
+    let scrollCurve: Double
     let leftStick: StickRole
     let rightStick: StickRole
     let bindings: [ControllerButton: ResolvedBinding]
@@ -17,7 +19,9 @@ struct ResolvedConfig: Equatable {
     static let empty = ResolvedConfig(
         deadzone: 0.15,
         mouseSpeed: 15,
+        mouseCurve: 2.0,
         scrollSpeed: 5,
+        scrollCurve: 1.0,
         leftStick: .mouse,
         rightStick: .scroll,
         bindings: Dictionary(uniqueKeysWithValues: ControllerButton.allCases.map { ($0, ResolvedBinding.none) })
@@ -121,7 +125,9 @@ enum ConfigLoader {
         let cfg = ResolvedConfig(
             deadzone: deadzone,
             mouseSpeed: mouseSpeed,
+            mouseCurve: 2.0,
             scrollSpeed: scrollSpeed,
+            scrollCurve: 1.0,
             leftStick: leftStick,
             rightStick: rightStick,
             bindings: resolved
