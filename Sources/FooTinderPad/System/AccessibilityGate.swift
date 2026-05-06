@@ -1,9 +1,11 @@
 import AppKit
 import ApplicationServices
+import os
 
 final class AccessibilityGate {
     enum State: Equatable { case granted, denied }
 
+    private let log = Logger(subsystem: "com.purefuncinc.FooTinderPad", category: "AccessibilityGate")
     private(set) var state: State
     private var pollTimer: Timer?
 
@@ -12,6 +14,7 @@ final class AccessibilityGate {
 
     init() {
         self.state = AXIsProcessTrusted() ? .granted : .denied
+        log.info("initial accessibility state: \(self.state == .granted ? "granted" : "denied", privacy: .public)")
     }
 
     /// If denied, shows an alert that links to System Settings and quits the app.
@@ -51,6 +54,7 @@ final class AccessibilityGate {
             guard let self else { return }
             let newState: State = AXIsProcessTrusted() ? .granted : .denied
             if newState != self.state {
+                self.log.info("accessibility state changed: \(newState == .granted ? "granted" : "denied", privacy: .public)")
                 self.state = newState
                 self.onStateChange?(newState)
             }

@@ -49,7 +49,7 @@ final class MenuBar {
             action: #selector(_reveal)
         ))
         configLogsSubmenu.addItem(Self.makeMenuItem(
-            title: "Open Console.app (filter copied)",
+            title: "Open Console.app (paste, then pick Subsystem)",
             systemImage: "text.magnifyingglass",
             target: self,
             action: #selector(_openConsole)

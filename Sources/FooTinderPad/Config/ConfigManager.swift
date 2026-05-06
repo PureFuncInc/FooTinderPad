@@ -48,6 +48,7 @@ final class ConfigManager {
         onSwap?(r.config)
         onWarnings?(r.warnings)
         armSource()
+        log.info("config loaded from \(self.url.path, privacy: .public) (warnings=\(r.warnings.count))")
     }
 
     func stop() {
@@ -95,6 +96,7 @@ final class ConfigManager {
             current = r.config
             onSwap?(r.config)
             onWarnings?(r.warnings)
+            log.info("config reloaded (warnings=\(r.warnings.count))")
         } catch {
             log.warning("reload failed (\(error.localizedDescription, privacy: .public)); keeping previous config")
             onWarnings?(["reload failed: \(error.localizedDescription)"])

@@ -34,6 +34,7 @@ final class TickLoop {
         }, observer)
         self.observerRef = observer
         CVDisplayLinkStart(l)
+        log.info("tick loop started")
     }
 
     func stop() {

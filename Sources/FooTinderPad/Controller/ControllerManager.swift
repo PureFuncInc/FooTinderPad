@@ -43,6 +43,7 @@ final class ControllerManager {
 
     @objc private func didDisconnect(_ note: Notification) {
         guard let c = note.object as? GCController else { return }
+        log.info("controller disconnected: \(c.vendorName ?? "?", privacy: .public)")
         stack.removeAll { $0 === c }
         if active === c {
             unwireCurrent()
@@ -56,6 +57,7 @@ final class ControllerManager {
             log.info("ignoring non-extended controller: \(c.vendorName ?? "?", privacy: .public)")
             return
         }
+        log.info("controller connected: \(c.vendorName ?? "?", privacy: .public)")
         if !stack.contains(where: { $0 === c }) { stack.append(c) }
         switchTo(c)
     }
@@ -64,6 +66,7 @@ final class ControllerManager {
         unwireCurrent()
         active = c
         wire(c)
+        log.info("active controller: \(c.vendorName ?? "?", privacy: .public)")
         onActiveChanged?(c)
     }
 

@@ -1,7 +1,9 @@
 import AppKit
 import GameController
+import os
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    private let log = Logger(subsystem: "com.purefuncinc.FooTinderPad", category: "AppDelegate")
     private let menuBar = MenuBar()
     private let accessibility = AccessibilityGate()
     private let configManager = ConfigManager()
@@ -17,6 +19,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private lazy var tickLoop = TickLoop(dispatcher: dispatcher)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        let hash = Bundle.main.object(forInfoDictionaryKey: "GitCommitHash") as? String ?? "?"
+        let date = Bundle.main.object(forInfoDictionaryKey: "GitCommitDate") as? String ?? "?"
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
+        log.info("launching: build=\(build, privacy: .public) commit=\(hash, privacy: .public) date=\(date, privacy: .public)")
+
         installEditMenu()
         installMenuBar()
 
@@ -70,9 +77,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             NSWorkspace.shared.activateFileViewerSelecting([Paths.configURL])
         }
         menuBar.onOpenConsole = {
+            // Console.app's search field doesn't recognize "subsystem:..." prefix syntax;
+            // instead, the user pastes the bare bundle id and picks "Subsystem" from the
+            // dropdown that appears. So copy just the id, not a pre-formatted predicate.
             let pb = NSPasteboard.general
             pb.clearContents()
-            pb.setString("subsystem:com.purefuncinc.FooTinderPad", forType: .string)
+            pb.setString("com.purefuncinc.FooTinderPad", forType: .string)
             NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Utilities/Console.app"))
         }
         menuBar.onAbout = { [weak self] in self?.showAboutPanel() }
