@@ -181,4 +181,18 @@ final class ConfigParserTests: XCTestCase {
         XCTAssertTrue(result.warnings.contains { $0.contains("buttonB") && $0.contains("repeat") })
     }
 
+    func testZeroTouchpadMouseSpeedFallsBackToDefault() throws {
+        let json = #"{"touchpadMouseSpeed": 0}"#.data(using: .utf8)!
+        let result = try ConfigLoader.load(from: json)
+        XCTAssertEqual(result.config.touchpadMouseSpeed, 300)
+        XCTAssertTrue(result.warnings.contains { $0.contains("touchpadMouseSpeed") })
+    }
+
+    func testNegativeTouchpadScrollSpeedFallsBackToDefault() throws {
+        let json = #"{"touchpadScrollSpeed": -5}"#.data(using: .utf8)!
+        let result = try ConfigLoader.load(from: json)
+        XCTAssertEqual(result.config.touchpadScrollSpeed, 20)
+        XCTAssertTrue(result.warnings.contains { $0.contains("touchpadScrollSpeed") })
+    }
+
 }

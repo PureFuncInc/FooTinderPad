@@ -107,8 +107,16 @@ enum ConfigLoader {
         }
 
         let touchpad = raw.touchpad ?? .none
-        let touchpadMouseSpeed = raw.touchpadMouseSpeed ?? 300
-        let touchpadScrollSpeed = raw.touchpadScrollSpeed ?? 20
+        var touchpadMouseSpeed = raw.touchpadMouseSpeed ?? 300
+        if touchpadMouseSpeed <= 0 {
+            warnings.append("touchpadMouseSpeed must be > 0; using default 300")
+            touchpadMouseSpeed = 300
+        }
+        var touchpadScrollSpeed = raw.touchpadScrollSpeed ?? 20
+        if touchpadScrollSpeed <= 0 {
+            warnings.append("touchpadScrollSpeed must be > 0; using default 20")
+            touchpadScrollSpeed = 20
+        }
 
         let leftStick = raw.leftStick ?? .mouse
         let rightStick = raw.rightStick ?? .scroll
