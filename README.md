@@ -68,7 +68,7 @@ make clean && make install
 | R2 | RightCmd | 同上, 食指搆得到的位置, 適合右手切換 app |
 | L3 | Cmd+Z | Undo |
 | R3 | 滑鼠右鍵 | Context menu |
-| D-pad ↑↓←→ | 方向鍵 (repeat) | UI 導航 / 文字游標, 按住連續移動 |
+| D-pad ↑↓←→ | 滑鼠微移動 | `dpad: "mouse"`, `dpadMouseSpeed: 3`, 使用原始碼內建線性曲線 |
 | Create (左上小鈕) | Cmd+V | 貼上 |
 | Options (右上小鈕) | Cmd+C | 複製 (拇指容易按到, 比扳機順) |
 | 觸控板按下 | Fn+Ctrl+Up | 呼叫 Mission Control (macOS 內建快捷鍵, 不需額外設定) |
@@ -100,6 +100,36 @@ make clean && make install
 | `touchpadButton` | 按下整片觸控板 | — | 僅 PS4 (DualShock4) / PS5 (DualSense) 有, Xbox 無此鈕 |
 
 `leftStick` / `rightStick` 屬性接受 `"mouse"`、 `"scroll"`、 `"none"` 三種角色。
+
+搖桿與 D-pad 的移動曲線寫在原始碼中, 不從 JSON config 調整。`dpad` 屬性接受 `"bindings"`、 `"mouse"`、 `"scroll"`、 `"none"` 四種角色。
+預設設定使用 `"mouse"` 做線性滑鼠微移動；若想恢復方向鍵綁定, 設為 `"bindings"` 並在 `bindings` 裡加入 `dpadUp` / `dpadDown` / `dpadLeft` / `dpadRight`。
+
+```json
+{
+  "deadzone": 0.15,
+  "mouseSpeed": 64,
+  "scrollSpeed": 2,
+  "leftStick": "mouse",
+  "rightStick": "scroll",
+  "dpad": "mouse",
+  "dpadMouseSpeed": 4,
+  "dpadScrollSpeed": 2,
+  "bindings": {
+    "buttonA": { "type": "key", "key": "Space", "repeat": true },
+    "buttonB": { "type": "key", "key": "Return" },
+    "buttonX": { "type": "mouseButton", "button": "left" },
+    "buttonY": { "type": "key", "key": "Backspace", "repeat": true },
+    "leftShoulder": { "type": "key", "key": "Escape" },
+    "rightShoulder": { "type": "mouseButton", "button": "right" },
+    "leftTrigger": { "type": "key", "key": "RightShift" },
+    "rightTrigger": { "type": "key", "key": "Alt+Return" },
+    "leftThumbstickButton": { "type": "key", "key": "Cmd+C" },
+    "rightThumbstickButton": { "type": "key", "key": "Cmd+V" },
+    "createButton": { "type": "key", "key": "Fn+Ctrl+Left" },
+    "optionsButton": { "type": "key", "key": "Fn+Ctrl+Right" }
+  }
+}
+```
 
 ## 支援的按鍵
 

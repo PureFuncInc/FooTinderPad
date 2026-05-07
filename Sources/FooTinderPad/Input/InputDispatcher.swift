@@ -10,12 +10,21 @@ struct TriggerHysteresis {
     }
 }
 
+private extension DPadRole {
+    var stickRole: StickRole {
+        switch self {
+        case .mouse: return .mouse
+        case .scroll: return .scroll
+        case .bindings, .none: return .none
+        }
+    }
+}
+
 final class InputDispatcher {
-    /// Response curves for the stick → mouse / scroll mapping. Hardcoded
-    /// internal tuning parameters; not exposed via JSON config. To adjust the
-    /// feel, edit these constants and rebuild.
+    /// Curve tuning lives in source on purpose. These are not JSON config knobs.
     private static let mouseCurve: Double = 4.0
     private static let scrollCurve: Double = 1.0
+    private static let dpadCurve: Double = 1.0
 
     private let configProvider: () -> ResolvedConfig
     private let key: KeySynthesizer
@@ -24,8 +33,10 @@ final class InputDispatcher {
     private let repeater = RepeatScheduler()
     private var leftStick = StickProcessor(deadzone: 0.15)
     private var rightStick = StickProcessor(deadzone: 0.15)
+    private var dpadStick = StickProcessor(deadzone: 0)
     private var leftTrigger = TriggerHysteresis()
     private var rightTrigger = TriggerHysteresis()
+    private var dpadPressed: Set<ControllerButton> = []
     private var lastLeftX: Double = 0
     private var lastLeftY: Double = 0
     private var lastRightX: Double = 0
@@ -44,7 +55,12 @@ final class InputDispatcher {
     // MARK: - inbound from controller
 
     func handleButton(_ button: ControllerButton, pressed: Bool) {
-        guard let binding = configProvider().bindings[button] else { return }
+        let cfg = configProvider()
+        if isDPadButton(button), cfg.dpad != .bindings {
+            updateDPad(button, pressed: pressed)
+            return
+        }
+        guard let binding = cfg.bindings[button] else { return }
         applyBinding(binding, button: button, pressed: pressed)
     }
 
@@ -77,26 +93,35 @@ final class InputDispatcher {
         let scale = dt * 60
         emit(role: cfg.leftStick, x: lastLeftX, y: lastLeftY,
              speedMouse: cfg.mouseSpeed, speedScroll: cfg.scrollSpeed,
+             curveMouse: Self.mouseCurve, curveScroll: Self.scrollCurve,
              processor: &leftStick, tickScale: scale)
         emit(role: cfg.rightStick, x: lastRightX, y: lastRightY,
              speedMouse: cfg.mouseSpeed, speedScroll: cfg.scrollSpeed,
+             curveMouse: Self.mouseCurve, curveScroll: Self.scrollCurve,
              processor: &rightStick, tickScale: scale)
+        let dpadVector = currentDPadVector()
+        emit(role: cfg.dpad.stickRole, x: dpadVector.x, y: dpadVector.y,
+             speedMouse: cfg.dpadMouseSpeed, speedScroll: cfg.dpadScrollSpeed,
+             curveMouse: Self.dpadCurve, curveScroll: Self.dpadCurve,
+             processor: &dpadStick, tickScale: scale)
     }
 
     private func emit(role: StickRole, x: Double, y: Double,
                       speedMouse: Double, speedScroll: Double,
+                      curveMouse: Double,
+                      curveScroll: Double,
                       processor: inout StickProcessor, tickScale: Double) {
         switch role {
         case .none:
             return
         case .mouse:
             let out = processor.tick(x: x, y: y, speed: speedMouse,
-                                     curve: Self.mouseCurve,
+                                     curve: curveMouse,
                                      tickScale: tickScale, invertY: true)
             mouse.move(deltaX: out.deltaX, deltaY: out.deltaY)
         case .scroll:
             let out = processor.tick(x: x, y: y, speed: speedScroll,
-                                     curve: Self.scrollCurve,
+                                     curve: curveScroll,
                                      tickScale: tickScale, invertY: false)
             mouse.scroll(deltaX: out.deltaX, deltaY: out.deltaY)
         }
@@ -104,11 +129,41 @@ final class InputDispatcher {
 
     func drainHeldInputs() {
         repeater.clear()
+        dpadPressed.removeAll()
         key.drain()
         mouse.drain()
     }
 
     // MARK: - private
+
+    private func isDPadButton(_ button: ControllerButton) -> Bool {
+        switch button {
+        case .dpadUp, .dpadDown, .dpadLeft, .dpadRight:
+            return true
+        default:
+            return false
+        }
+    }
+
+    private func updateDPad(_ button: ControllerButton, pressed: Bool) {
+        if pressed {
+            dpadPressed.insert(button)
+        } else {
+            dpadPressed.remove(button)
+        }
+    }
+
+    private func currentDPadVector() -> (x: Double, y: Double) {
+        var x = 0.0
+        var y = 0.0
+        if dpadPressed.contains(.dpadLeft) { x -= 1 }
+        if dpadPressed.contains(.dpadRight) { x += 1 }
+        if dpadPressed.contains(.dpadUp) { y += 1 }
+        if dpadPressed.contains(.dpadDown) { y -= 1 }
+        let mag = (x * x + y * y).squareRoot()
+        guard mag > 1 else { return (x, y) }
+        return (x / mag, y / mag)
+    }
 
     private func applyBinding(_ binding: ResolvedBinding, button: ControllerButton, pressed: Bool) {
         switch binding {

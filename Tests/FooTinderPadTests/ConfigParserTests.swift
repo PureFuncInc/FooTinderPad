@@ -37,6 +37,9 @@ final class ConfigParserTests: XCTestCase {
         XCTAssertEqual(result.config.scrollSpeed, 5)
         XCTAssertEqual(result.config.leftStick, .mouse)
         XCTAssertEqual(result.config.rightStick, .scroll)
+        XCTAssertEqual(result.config.dpad, .bindings)
+        XCTAssertEqual(result.config.dpadMouseSpeed, 3)
+        XCTAssertEqual(result.config.dpadScrollSpeed, 2)
         XCTAssertEqual(result.config.bindings.count, 17)
         XCTAssertTrue(result.warnings.isEmpty)
     }
@@ -49,6 +52,7 @@ final class ConfigParserTests: XCTestCase {
         XCTAssertEqual(result.config.scrollSpeed, 5)
         XCTAssertEqual(result.config.leftStick, .mouse)
         XCTAssertEqual(result.config.rightStick, .scroll)
+        XCTAssertEqual(result.config.dpad, .bindings)
     }
 
     func testNegativeDeadzoneIsClampedWithWarning() throws {
@@ -70,6 +74,26 @@ final class ConfigParserTests: XCTestCase {
         let result = try ConfigLoader.load(from: json)
         XCTAssertEqual(result.config.mouseSpeed, 15)
         XCTAssertTrue(result.warnings.contains { $0.contains("mouseSpeed") })
+    }
+
+    func testDPadMouseSettingsParse() throws {
+        let json = #"""
+        {
+          "dpad": "mouse",
+          "dpadMouseSpeed": 2.5
+        }
+        """#.data(using: .utf8)!
+        let result = try ConfigLoader.load(from: json)
+        XCTAssertEqual(result.config.dpad, .mouse)
+        XCTAssertEqual(result.config.dpadMouseSpeed, 2.5)
+        XCTAssertTrue(result.warnings.isEmpty)
+    }
+
+    func testInvalidDPadMouseSpeedFallsBackToDefaultWithWarning() throws {
+        let json = #"{"dpadMouseSpeed": 0}"#.data(using: .utf8)!
+        let result = try ConfigLoader.load(from: json)
+        XCTAssertEqual(result.config.dpadMouseSpeed, 3)
+        XCTAssertTrue(result.warnings.contains { $0.contains("dpadMouseSpeed") })
     }
 
     func testUnknownButtonNameIsDropped() throws {

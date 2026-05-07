@@ -9,6 +9,9 @@ struct ResolvedConfig: Equatable {
     let scrollSpeed: Double
     let leftStick: StickRole
     let rightStick: StickRole
+    let dpad: DPadRole
+    let dpadMouseSpeed: Double
+    let dpadScrollSpeed: Double
     let bindings: [ControllerButton: ResolvedBinding]
 
     /// In-memory placeholder used before the first successful load. Mirrors the
@@ -20,6 +23,9 @@ struct ResolvedConfig: Equatable {
         scrollSpeed: 5,
         leftStick: .mouse,
         rightStick: .scroll,
+        dpad: .bindings,
+        dpadMouseSpeed: 3,
+        dpadScrollSpeed: 2,
         bindings: Dictionary(uniqueKeysWithValues: ControllerButton.allCases.map { ($0, ResolvedBinding.none) })
     )
 }
@@ -38,6 +44,9 @@ private struct RawConfig: Decodable {
     var scrollSpeed: Double?
     var leftStick: StickRole?
     var rightStick: StickRole?
+    var dpad: DPadRole?
+    var dpadMouseSpeed: Double?
+    var dpadScrollSpeed: Double?
     var bindings: [String: RawBinding]?
 }
 
@@ -77,9 +86,20 @@ enum ConfigLoader {
             warnings.append("scrollSpeed must be > 0; using default 5")
             scrollSpeed = 5
         }
+        var dpadMouseSpeed = raw.dpadMouseSpeed ?? 3
+        if dpadMouseSpeed <= 0 {
+            warnings.append("dpadMouseSpeed must be > 0; using default 3")
+            dpadMouseSpeed = 3
+        }
+        var dpadScrollSpeed = raw.dpadScrollSpeed ?? 2
+        if dpadScrollSpeed <= 0 {
+            warnings.append("dpadScrollSpeed must be > 0; using default 2")
+            dpadScrollSpeed = 2
+        }
 
         let leftStick = raw.leftStick ?? .mouse
         let rightStick = raw.rightStick ?? .scroll
+        let dpad = raw.dpad ?? .bindings
 
         // Bindings — start with all .none, then overlay valid ones
         var resolved: [ControllerButton: ResolvedBinding] = [:]
@@ -136,6 +156,9 @@ enum ConfigLoader {
             scrollSpeed: scrollSpeed,
             leftStick: leftStick,
             rightStick: rightStick,
+            dpad: dpad,
+            dpadMouseSpeed: dpadMouseSpeed,
+            dpadScrollSpeed: dpadScrollSpeed,
             bindings: resolved
         )
         return LoadResult(config: cfg, warnings: warnings)
