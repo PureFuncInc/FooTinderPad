@@ -2,44 +2,53 @@
 
 將遊戲控制器 (Game Controller) 對應為 macOS 的鍵盤與滑鼠輸入, 讓你能用搖桿操作整個系統。
 
-## 設定檔位置
+## Requirements
 
-執行期使用者設定:`~/Library/Application Support/FooTinderPad/config.json`
-- 第一次啟動會用 `Resources/DefaultConfig.json` 作為初始內容
-- 修改後**自動熱重載** (~100ms),不需要重啟 app
-- JSON 解析失敗時會保留前一份正確設定,警告會出現在選單列
+- macOS 13 (Ventura) 以上
+- Swift 5.9 以上 (Xcode 15+)
+- 已配對的遊戲控制器 (Xbox / PlayStation)
+- 系統設定中授予 「輔助使用 (Accessibility)」 權限
+
+## Install
+
+```bash
+make clean && make install
+```
 
 ## 預設設定
+
+![控制器正面](docs/front.png)
+![控制器背面](docs/back.png)
 
 ```json
 {
   "deadzone": 0.15,
   "mouseSpeed": 15,
-  "scrollSpeed": 5,
+  "scrollSpeed": 2,
+  "leftStick": "mouse",
+  "rightStick": "scroll",
   "bindings": {
-    "buttonA": { "type": "key", "key": "Space" },
+    "buttonA": { "type": "key", "key": "Space", "repeat": true },
     "buttonB": { "type": "key", "key": "Return" },
     "buttonX": { "type": "mouseButton", "button": "left" },
-    "buttonY": { "type": "key", "key": "Delete" },
+    "buttonY": { "type": "key", "key": "Backspace", "repeat": true },
     "leftShoulder": { "type": "key", "key": "Escape" },
     "rightShoulder": { "type": "mouseButton", "button": "right" },
     "leftTrigger": { "type": "key", "key": "RightShift" },
     "rightTrigger": { "type": "key", "key": "Alt+Return" },
-    "leftThumbstickButton": { "type": "none" },
-    "rightThumbstickButton": { "type": "none" },
-    "dpadUp": { "type": "key", "key": "Up" },
-    "dpadDown": { "type": "key", "key": "Down" },
-    "dpadLeft": { "type": "key", "key": "Left" },
-    "dpadRight": { "type": "key", "key": "Right" },
-    "optionsButton": { "type": "none" },
-    "createButton": { "type": "none" }
-  },
-  "leftStick": "mouse",
-  "rightStick": "scroll"
+    "leftThumbstickButton": { "type": "key", "key": "Cmd+C" },
+    "rightThumbstickButton": { "type": "key", "key": "Cmd+V" },
+    "dpadUp": { "type": "key", "key": "Up", "repeat": true },
+    "dpadDown": { "type": "key", "key": "Down", "repeat": true },
+    "dpadLeft": { "type": "key", "key": "Left", "repeat": true },
+    "dpadRight": { "type": "key", "key": "Right", "repeat": true },
+    "createButton": { "type": "key", "key": "Fn+Ctrl+Left" },
+    "optionsButton": { "type": "key", "key": "Fn+Ctrl+Right" }
+  }
 }
 ```
 
-## 示範設定 (易上手版)
+## PS5 示範設定 (易上手版)
 
 下載: [`docs/examples/easy-preset.json`](docs/examples/easy-preset.json) — 直接覆蓋到 `~/Library/Application Support/FooTinderPad/config.json` 即可。
 
@@ -47,6 +56,8 @@
 
 | 按鈕 | 對應 | 說明 |
 |---|---|---|
+| 左搖桿 | 滑鼠移動 | `mouseSpeed: 25` |
+| 右搖桿 | 滾輪捲動 | `scrollSpeed: 5` |
 | × Cross | 滑鼠左鍵 | PS 慣例「主要動作」 |
 | ○ Circle | Escape | PS 慣例「取消/返回」 |
 | ■ Square | Backspace (repeat) | 文字編輯刪除, 按住連續刪 |
@@ -58,32 +69,9 @@
 | L3 | Cmd+Z | Undo |
 | R3 | 滑鼠右鍵 | Context menu |
 | D-pad ↑↓←→ | 方向鍵 (repeat) | UI 導航 / 文字游標, 按住連續移動 |
-| Options (右上小鈕) | Cmd+C | 複製 (拇指容易按到, 比扳機順) |
 | Create (左上小鈕) | Cmd+V | 貼上 |
+| Options (右上小鈕) | Cmd+C | 複製 (拇指容易按到, 比扳機順) |
 | 觸控板按下 | Fn+Ctrl+Up | 呼叫 Mission Control (macOS 內建快捷鍵, 不需額外設定) |
-| 左搖桿 | 滑鼠移動 | `mouseSpeed: 25` |
-| 右搖桿 | 滾輪捲動 | `scrollSpeed: 5` |
-
-### 控制器正面
-
-![控制器正面](docs/front.png)
-
-### 控制器背面
-
-![控制器背面](docs/back.png)
-
-## Requirements
-
-- macOS 13 (Ventura) 以上
-- Swift 5.9 以上 (Xcode 15+)
-- 已配對的遊戲控制器 (Xbox / PlayStation)
-- 系統設定中授予 「輔助使用 (Accessibility) 」 權限
-
-## Install
-
-```bash
-make clean && make install
-```
 
 ## Launch at Login
 
@@ -107,8 +95,8 @@ make clean && make install
 | `leftTrigger` / `rightTrigger` | L2 / R2 | LT / RT | 下扳機 (類比, 觸發點 0.55 / 釋放點 0.45) |
 | `leftThumbstickButton` / `rightThumbstickButton` | L3 / R3 | LS / RS | 按下搖桿 |
 | `dpadUp` / `dpadDown` / `dpadLeft` / `dpadRight` | 方向鍵 | 方向鍵 | |
-| `optionsButton` | Options (右上小鈕) | Menu | 觸控板右上方 |
 | `createButton` | Create (左上小鈕) | View | 觸控板左上方 |
+| `optionsButton` | Options (右上小鈕) | Menu | 觸控板右上方 |
 | `touchpadButton` | 按下整片觸控板 | — | 僅 PS4 (DualShock4) / PS5 (DualSense) 有, Xbox 無此鈕 |
 
 `leftStick` / `rightStick` 屬性接受 `"mouse"`、 `"scroll"`、 `"none"` 三種角色。
@@ -153,5 +141,3 @@ make clean && make install
 ```json
 "buttonX": { "type": "key", "key": "Backspace", "repeat": true }
 ```
-
-`docs/examples/easy-preset.json` 預設在 dpad 四個方向跟 Square (Backspace) 上開啟 repeat。
