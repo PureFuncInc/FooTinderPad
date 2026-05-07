@@ -81,8 +81,11 @@ final class InputDispatcherTests: XCTestCase {
     }
 
     private func makeConfig(
-        dpad: DPadRole,
+        dpad: DPadRole = .bindings,
         dpadMouseSpeed: Double = 3,
+        touchpad: TouchpadRole = .none,
+        touchpadMouseSpeed: Double = 300,
+        touchpadScrollSpeed: Double = 20,
         bindings: [ControllerButton: ResolvedBinding] = [:]
     ) -> ResolvedConfig {
         var resolved = Dictionary(uniqueKeysWithValues: ControllerButton.allCases.map { ($0, ResolvedBinding.none) })
@@ -98,6 +101,9 @@ final class InputDispatcherTests: XCTestCase {
             dpad: dpad,
             dpadMouseSpeed: dpadMouseSpeed,
             dpadScrollSpeed: 2,
+            touchpad: touchpad,
+            touchpadMouseSpeed: touchpadMouseSpeed,
+            touchpadScrollSpeed: touchpadScrollSpeed,
             bindings: resolved
         )
     }

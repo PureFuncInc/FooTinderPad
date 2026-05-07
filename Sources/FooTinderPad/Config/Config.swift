@@ -12,6 +12,9 @@ struct ResolvedConfig: Equatable {
     let dpad: DPadRole
     let dpadMouseSpeed: Double
     let dpadScrollSpeed: Double
+    let touchpad: TouchpadRole
+    let touchpadMouseSpeed: Double
+    let touchpadScrollSpeed: Double
     let bindings: [ControllerButton: ResolvedBinding]
 
     /// In-memory placeholder used before the first successful load. Mirrors the
@@ -26,6 +29,9 @@ struct ResolvedConfig: Equatable {
         dpad: .bindings,
         dpadMouseSpeed: 3,
         dpadScrollSpeed: 2,
+        touchpad: .none,
+        touchpadMouseSpeed: 300,
+        touchpadScrollSpeed: 20,
         bindings: Dictionary(uniqueKeysWithValues: ControllerButton.allCases.map { ($0, ResolvedBinding.none) })
     )
 }
@@ -47,6 +53,9 @@ private struct RawConfig: Decodable {
     var dpad: DPadRole?
     var dpadMouseSpeed: Double?
     var dpadScrollSpeed: Double?
+    var touchpad: TouchpadRole?
+    var touchpadMouseSpeed: Double?
+    var touchpadScrollSpeed: Double?
     var bindings: [String: RawBinding]?
 }
 
@@ -96,6 +105,10 @@ enum ConfigLoader {
             warnings.append("dpadScrollSpeed must be > 0; using default 2")
             dpadScrollSpeed = 2
         }
+
+        let touchpad = raw.touchpad ?? .none
+        let touchpadMouseSpeed = raw.touchpadMouseSpeed ?? 300
+        let touchpadScrollSpeed = raw.touchpadScrollSpeed ?? 20
 
         let leftStick = raw.leftStick ?? .mouse
         let rightStick = raw.rightStick ?? .scroll
@@ -159,6 +172,9 @@ enum ConfigLoader {
             dpad: dpad,
             dpadMouseSpeed: dpadMouseSpeed,
             dpadScrollSpeed: dpadScrollSpeed,
+            touchpad: touchpad,
+            touchpadMouseSpeed: touchpadMouseSpeed,
+            touchpadScrollSpeed: touchpadScrollSpeed,
             bindings: resolved
         )
         return LoadResult(config: cfg, warnings: warnings)

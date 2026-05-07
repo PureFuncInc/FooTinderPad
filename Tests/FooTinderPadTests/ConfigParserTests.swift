@@ -41,6 +41,9 @@ final class ConfigParserTests: XCTestCase {
         XCTAssertEqual(result.config.dpadMouseSpeed, 3)
         XCTAssertEqual(result.config.dpadScrollSpeed, 2)
         XCTAssertEqual(result.config.bindings.count, 17)
+        XCTAssertEqual(result.config.touchpad, .none)
+        XCTAssertEqual(result.config.touchpadMouseSpeed, 300)
+        XCTAssertEqual(result.config.touchpadScrollSpeed, 20)
         XCTAssertTrue(result.warnings.isEmpty)
     }
 
@@ -53,6 +56,14 @@ final class ConfigParserTests: XCTestCase {
         XCTAssertEqual(result.config.leftStick, .mouse)
         XCTAssertEqual(result.config.rightStick, .scroll)
         XCTAssertEqual(result.config.dpad, .bindings)
+    }
+
+    func testTouchpadFieldsHaveDefaults() throws {
+        let json = "{}".data(using: .utf8)!
+        let result = try ConfigLoader.load(from: json)
+        XCTAssertEqual(result.config.touchpad, .none)
+        XCTAssertEqual(result.config.touchpadMouseSpeed, 300)
+        XCTAssertEqual(result.config.touchpadScrollSpeed, 20)
     }
 
     func testNegativeDeadzoneIsClampedWithWarning() throws {
