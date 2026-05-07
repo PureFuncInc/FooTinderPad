@@ -85,6 +85,9 @@ final class ControllerManager {
         pad.rightTrigger.valueChangedHandler = nil
         pad.leftThumbstick.valueChangedHandler = nil
         pad.rightThumbstick.valueChangedHandler = nil
+        if let surface = Self.touchpadOne(of: pad) {
+            surface.valueChangedHandler = nil
+        }
         dispatcher?.drainHeldInputs()
     }
 
@@ -93,6 +96,15 @@ final class ControllerManager {
     private static func touchpadButton(of pad: GCExtendedGamepad) -> GCControllerButtonInput? {
         if let ds = pad as? GCDualSenseGamepad { return ds.touchpadButton }
         if let ds = pad as? GCDualShockGamepad { return ds.touchpadButton }
+        return nil
+    }
+
+    /// Touchpad surface (single-finger primary) — only present on PS4 (DualShock) /
+    /// PS5 (DualSense). Returns nil for other extended-gamepad-shaped
+    /// controllers, in which case the surface wiring is silently skipped.
+    private static func touchpadOne(of pad: GCExtendedGamepad) -> GCControllerDirectionPad? {
+        if let ds = pad as? GCDualSenseGamepad { return ds.touchpadPrimary }
+        if let ds = pad as? GCDualShockGamepad { return ds.touchpadPrimary }
         return nil
     }
 
@@ -138,6 +150,18 @@ final class ControllerManager {
         if let touchpad = Self.touchpadButton(of: pad) {
             touchpad.valueChangedHandler = { [weak dispatcher] _, _, pressed in
                 dispatcher?.handleButton(.touchpadButton, pressed: pressed)
+            }
+        }
+
+        // PS4/PS5 touchpad surface (single-finger, delta mode).
+        if let surface = Self.touchpadOne(of: pad) {
+            surface.valueChangedHandler = { [weak dispatcher] _, x, y in
+                // Heuristic: if both axes report exactly zero, treat as
+                // "no finger present". The framework reports (0, 0) when
+                // the touch is released; a real touch landing exactly at
+                // dead-centre is rare and only loses one delta tick.
+                let touched = (x != 0 || y != 0)
+                dispatcher?.handleTouchpad(x: Double(x), y: Double(y), touched: touched)
             }
         }
 
