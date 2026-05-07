@@ -53,7 +53,7 @@ private struct RawConfig: Decodable {
     var dpad: DPadRole?
     var dpadMouseSpeed: Double?
     var dpadScrollSpeed: Double?
-    var touchpad: TouchpadRole?
+    var touchpad: String?
     var touchpadMouseSpeed: Double?
     var touchpadScrollSpeed: Double?
     var bindings: [String: RawBinding]?
@@ -106,7 +106,14 @@ enum ConfigLoader {
             dpadScrollSpeed = 2
         }
 
-        let touchpad = raw.touchpad ?? .none
+        var touchpad: TouchpadRole = .none
+        if let raw = raw.touchpad {
+            if let parsed = TouchpadRole(rawValue: raw) {
+                touchpad = parsed
+            } else {
+                warnings.append("unknown touchpad role '\(raw)'; using none")
+            }
+        }
         var touchpadMouseSpeed = raw.touchpadMouseSpeed ?? 300
         if touchpadMouseSpeed <= 0 {
             warnings.append("touchpadMouseSpeed must be > 0; using default 300")

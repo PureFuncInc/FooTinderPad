@@ -195,4 +195,18 @@ final class ConfigParserTests: XCTestCase {
         XCTAssertTrue(result.warnings.contains { $0.contains("touchpadScrollSpeed") })
     }
 
+    func testTouchpadRoleParsesValidValue() throws {
+        let json = #"{"touchpad": "scroll"}"#.data(using: .utf8)!
+        let result = try ConfigLoader.load(from: json)
+        XCTAssertEqual(result.config.touchpad, .scroll)
+        XCTAssertTrue(result.warnings.isEmpty)
+    }
+
+    func testUnknownTouchpadRoleWarnsAndFallsBackToNone() throws {
+        let json = #"{"touchpad": "wat"}"#.data(using: .utf8)!
+        let result = try ConfigLoader.load(from: json)
+        XCTAssertEqual(result.config.touchpad, .none)
+        XCTAssertTrue(result.warnings.contains { $0.contains("touchpad") })
+    }
+
 }
