@@ -11,6 +11,9 @@ enum DefaultConfig {
       "scrollSpeed": 2,
       "leftStick": "mouse",
       "rightStick": "scroll",
+      "touchpad": "none",
+      "touchpadMouseSpeed": 300,
+      "touchpadScrollSpeed": 20,
       "bindings": {
         "buttonA": { "type": "key", "key": "Space", "repeat": true },
         "buttonB": { "type": "key", "key": "Return" },
