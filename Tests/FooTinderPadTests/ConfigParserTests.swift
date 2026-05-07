@@ -41,9 +41,6 @@ final class ConfigParserTests: XCTestCase {
         XCTAssertEqual(result.config.dpadMouseSpeed, 3)
         XCTAssertEqual(result.config.dpadScrollSpeed, 2)
         XCTAssertEqual(result.config.bindings.count, 17)
-        XCTAssertEqual(result.config.touchpad, .none)
-        XCTAssertEqual(result.config.touchpadMouseSpeed, 300)
-        XCTAssertEqual(result.config.touchpadScrollSpeed, 20)
         XCTAssertTrue(result.warnings.isEmpty)
     }
 
@@ -56,14 +53,6 @@ final class ConfigParserTests: XCTestCase {
         XCTAssertEqual(result.config.leftStick, .mouse)
         XCTAssertEqual(result.config.rightStick, .scroll)
         XCTAssertEqual(result.config.dpad, .bindings)
-    }
-
-    func testTouchpadFieldsHaveDefaults() throws {
-        let json = "{}".data(using: .utf8)!
-        let result = try ConfigLoader.load(from: json)
-        XCTAssertEqual(result.config.touchpad, .none)
-        XCTAssertEqual(result.config.touchpadMouseSpeed, 300)
-        XCTAssertEqual(result.config.touchpadScrollSpeed, 20)
     }
 
     func testNegativeDeadzoneIsClampedWithWarning() throws {
@@ -179,34 +168,6 @@ final class ConfigParserTests: XCTestCase {
         XCTAssertEqual(result.config.bindings[.buttonB], .mouseButton(.left))
         XCTAssertTrue(result.warnings.contains { $0.contains("buttonA") && $0.contains("repeat") })
         XCTAssertTrue(result.warnings.contains { $0.contains("buttonB") && $0.contains("repeat") })
-    }
-
-    func testZeroTouchpadMouseSpeedFallsBackToDefault() throws {
-        let json = #"{"touchpadMouseSpeed": 0}"#.data(using: .utf8)!
-        let result = try ConfigLoader.load(from: json)
-        XCTAssertEqual(result.config.touchpadMouseSpeed, 300)
-        XCTAssertTrue(result.warnings.contains { $0.contains("touchpadMouseSpeed") })
-    }
-
-    func testNegativeTouchpadScrollSpeedFallsBackToDefault() throws {
-        let json = #"{"touchpadScrollSpeed": -5}"#.data(using: .utf8)!
-        let result = try ConfigLoader.load(from: json)
-        XCTAssertEqual(result.config.touchpadScrollSpeed, 20)
-        XCTAssertTrue(result.warnings.contains { $0.contains("touchpadScrollSpeed") })
-    }
-
-    func testTouchpadRoleParsesValidValue() throws {
-        let json = #"{"touchpad": "scroll"}"#.data(using: .utf8)!
-        let result = try ConfigLoader.load(from: json)
-        XCTAssertEqual(result.config.touchpad, .scroll)
-        XCTAssertTrue(result.warnings.isEmpty)
-    }
-
-    func testUnknownTouchpadRoleWarnsAndFallsBackToNone() throws {
-        let json = #"{"touchpad": "wat"}"#.data(using: .utf8)!
-        let result = try ConfigLoader.load(from: json)
-        XCTAssertEqual(result.config.touchpad, .none)
-        XCTAssertTrue(result.warnings.contains { $0.contains("touchpad") })
     }
 
 }

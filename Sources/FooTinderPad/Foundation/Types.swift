@@ -22,10 +22,6 @@ enum DPadRole: String, Codable {
     case bindings, mouse, scroll, none
 }
 
-enum TouchpadRole: String, Codable {
-    case mouse, scroll, none
-}
-
 enum ModifierKey: Hashable, CaseIterable {
     case leftCtrl, rightCtrl
     case leftAlt, rightAlt

@@ -104,8 +104,6 @@ make clean && make install
 搖桿與 D-pad 的移動曲線寫在原始碼中, 不從 JSON config 調整。`dpad` 屬性接受 `"bindings"`、 `"mouse"`、 `"scroll"`、 `"none"` 四種角色。
 預設設定使用 `"mouse"` 做線性滑鼠微移動；若想恢復方向鍵綁定, 設為 `"bindings"` 並在 `bindings` 裡加入 `dpadUp` / `dpadDown` / `dpadLeft` / `dpadRight`。
 
-`touchpad` 屬性接受 `"mouse"`、 `"scroll"`、 `"none"` 三種角色, 預設 `"none"`。僅 PS4 (DualShock4) / PS5 (DualSense) 控制器有此面。啟用後手指在觸控板上滑動會直接驅動滑鼠移動或捲動 (trackpad-style delta), 手指不動就不會輸出。`touchpadMouseSpeed` 預設 300, `touchpadScrollSpeed` 預設 20, 可獨立微調。整片觸控板按下 (click) 仍走 `touchpadButton` binding, 與表面滑動互不干擾。
-
 ```json
 {
   "deadzone": 0.15,
@@ -113,9 +111,6 @@ make clean && make install
   "scrollSpeed": 2,
   "leftStick": "mouse",
   "rightStick": "scroll",
-  "touchpad": "scroll",
-  "touchpadMouseSpeed": 300,
-  "touchpadScrollSpeed": 20,
   "dpad": "mouse",
   "dpadMouseSpeed": 4,
   "dpadScrollSpeed": 2,

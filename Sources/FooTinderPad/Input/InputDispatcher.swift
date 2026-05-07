@@ -20,16 +20,6 @@ private extension DPadRole {
     }
 }
 
-private extension TouchpadRole {
-    var invertY: Bool {
-        switch self {
-        case .mouse: return true
-        case .scroll: return false
-        case .none: return false
-        }
-    }
-}
-
 final class InputDispatcher {
     /// Curve tuning lives in source on purpose. These are not JSON config knobs.
     private static let mouseCurve: Double = 4.0
@@ -51,10 +41,6 @@ final class InputDispatcher {
     private var lastLeftY: Double = 0
     private var lastRightX: Double = 0
     private var lastRightY: Double = 0
-    private var lastTouchpadX: Double = 0
-    private var lastTouchpadY: Double = 0
-    private var touchpadActive: Bool = false
-    private var touchpadProcessor = TouchpadProcessor()
 
     init(config: @escaping () -> ResolvedConfig,
          key: KeySynthesizer,
@@ -95,12 +81,6 @@ final class InputDispatcher {
     func updateLeftStick(x: Double, y: Double)  { lastLeftX = x; lastLeftY = y }
     func updateRightStick(x: Double, y: Double) { lastRightX = x; lastRightY = y }
 
-    func handleTouchpad(x: Double, y: Double, touched: Bool) {
-        lastTouchpadX = x
-        lastTouchpadY = y
-        touchpadActive = touched
-    }
-
     // MARK: - tick (called by TickLoop)
 
     func tick(dt: Double) {
@@ -124,11 +104,6 @@ final class InputDispatcher {
              speedMouse: cfg.dpadMouseSpeed, speedScroll: cfg.dpadScrollSpeed,
              curveMouse: Self.dpadCurve, curveScroll: Self.dpadCurve,
              processor: &dpadStick, tickScale: scale)
-        emitTouchpad(role: cfg.touchpad,
-                     x: lastTouchpadX, y: lastTouchpadY, touched: touchpadActive,
-                     speedMouse: cfg.touchpadMouseSpeed,
-                     speedScroll: cfg.touchpadScrollSpeed,
-                     processor: &touchpadProcessor, tickScale: scale)
     }
 
     private func emit(role: StickRole, x: Double, y: Double,
@@ -152,32 +127,9 @@ final class InputDispatcher {
         }
     }
 
-    private func emitTouchpad(role: TouchpadRole, x: Double, y: Double, touched: Bool,
-                              speedMouse: Double, speedScroll: Double,
-                              processor: inout TouchpadProcessor, tickScale: Double) {
-        switch role {
-        case .none:
-            return
-        case .mouse:
-            let out = processor.tick(x: x, y: y, touched: touched,
-                                     speed: speedMouse,
-                                     tickScale: tickScale, invertY: role.invertY)
-            mouse.move(deltaX: out.deltaX, deltaY: out.deltaY)
-        case .scroll:
-            let out = processor.tick(x: x, y: y, touched: touched,
-                                     speed: speedScroll,
-                                     tickScale: tickScale, invertY: role.invertY)
-            mouse.scroll(deltaX: out.deltaX, deltaY: out.deltaY)
-        }
-    }
-
     func drainHeldInputs() {
         repeater.clear()
         dpadPressed.removeAll()
-        touchpadActive = false
-        lastTouchpadX = 0
-        lastTouchpadY = 0
-        touchpadProcessor.drain()
         key.drain()
         mouse.drain()
     }
