@@ -74,7 +74,7 @@ enum KeyParser {
         case "ctrl", "control":         return .leftCtrl
         case "leftctrl", "leftcontrol": return .leftCtrl
         case "rightctrl", "rightcontrol": return .rightCtrl
-        case "alt", "option", "opt":    return .leftAlt
+        case "alt", "option":           return .leftAlt
         case "leftalt", "leftoption":   return .leftAlt
         case "rightalt", "rightoption": return .rightAlt
         case "shift":                   return .leftShift

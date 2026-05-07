@@ -140,7 +140,7 @@ make clean && make install
 | 修飾鍵 | 可用別名 |
 |---|---|
 | Control | `ctrl`, `control`, `leftctrl`, `leftcontrol`, `rightctrl`, `rightcontrol` |
-| Option / Alt | `alt`, `option`, `opt`, `leftalt`, `leftoption`, `rightalt`, `rightoption` |
+| Option / Alt | `alt`, `option`, `leftalt`, `leftoption`, `rightalt`, `rightoption` |
 | Shift | `shift`, `leftshift`, `rightshift` |
 | Command / Win | `cmd`, `command`, `win`, `leftcmd`, `leftcommand`, `leftwin`, `rightcmd`, `rightcommand`, `rightwin` |
 | Function | `fn` |
