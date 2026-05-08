@@ -73,6 +73,10 @@ make clean && make install
 | Options (右上小鈕) | Cmd+C | 複製 (拇指容易按到, 比扳機順) |
 | 觸控板按下 | Fn+Ctrl+Up | 呼叫 Mission Control (macOS 內建快捷鍵, 不需額外設定) |
 
+## Battery indicator
+
+當控制器連線且回報電量時, menu bar 圖示右側會顯示百分比, 例如 `🎮 82%`。充電中加上 `⚡` 前綴 (`🎮 ⚡82%`), 充滿時顯示 `🎮 ⚡100%`。放電時若降到 20% 或以下, 數字轉為紅色提醒充電 (充電中的低電量不轉紅, 因為已在充電)。控制器未提供電量資訊 (有線通用 HID, 部分第三方型號) 時不顯示百分比, 只留 icon。
+
 ## Launch at Login
 
 從選單列點 FooTinderPad 圖示 → `Launch at Login` 切換開關。打開後 macOS 會在使用者登入時自動啟動 app, 同樣的開關也會出現在「系統設定 → 一般 → 登入項目」。
