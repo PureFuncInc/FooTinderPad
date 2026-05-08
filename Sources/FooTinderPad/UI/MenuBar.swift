@@ -165,13 +165,15 @@ final class MenuBar: NSObject, NSMenuDelegate {
         guard let button = statusItem?.button else { return }
         let title: String
         let color: NSColor?
+        // Leading space separates the SF Symbol image from the text —
+        // NSStatusBarButton has no dedicated icon/text spacing API.
         switch suffix {
         case .none:
             title = ""
             color = nil
         case .discharging(let n):
             title = " \(n)%"
-            color = (n <= 20) ? .systemRed : nil
+            color = suffix.isLow ? .systemRed : nil
         case .charging(let n):
             title = " ⚡\(n)%"
             color = nil
