@@ -42,6 +42,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         accessibility.onStateChange = { [weak self] state in
             self?.refreshMenuBarState()
             if state == .denied { self?.dispatcher.drainHeldInputs() }
+            // Re-evaluate the bind: if access was revoked, unbind immediately
+            // so a pending timer tick cannot resurrect the suffix.
             self?.rebindBattery()
         }
         accessibility.checkAndPromptIfNeeded() // terminates if denied
