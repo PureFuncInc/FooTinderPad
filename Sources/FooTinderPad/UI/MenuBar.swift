@@ -159,7 +159,36 @@ final class MenuBar: NSObject, NSMenuDelegate {
             image?.isTemplate = false
             button.image = image
         }
-        button.title = ""
+    }
+
+    func setBatterySuffix(_ suffix: BatterySuffix) {
+        guard let button = statusItem?.button else { return }
+        let title: String
+        let color: NSColor?
+        // Leading space separates the SF Symbol image from the text —
+        // NSStatusBarButton has no dedicated icon/text spacing API.
+        switch suffix {
+        case .none:
+            title = ""
+            color = nil
+        case .discharging(let n):
+            title = " \(n)%"
+            color = suffix.isLow ? .systemRed : nil
+        case .charging(let n):
+            title = " ⚡\(n)%"
+            color = nil
+        case .full:
+            title = " ⚡100%"
+            color = nil
+        }
+        if let color {
+            button.attributedTitle = NSAttributedString(
+                string: title,
+                attributes: [.foregroundColor: color]
+            )
+        } else {
+            button.attributedTitle = NSAttributedString(string: title)
+        }
     }
 
     // MARK: - NSMenuDelegate
