@@ -7,6 +7,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let menuBar = MenuBar()
     private let accessibility = AccessibilityGate()
     private let launchAtLogin = LaunchAtLogin()
+    private let battery = BatteryMonitor()
     private let configManager = ConfigManager()
     private let sink: EventSink = CGEventSink()
     private lazy var key = KeySynthesizer(sink: sink)
@@ -41,11 +42,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         accessibility.onStateChange = { [weak self] state in
             self?.refreshMenuBarState()
             if state == .denied { self?.dispatcher.drainHeldInputs() }
+            self?.rebindBattery()
         }
         accessibility.checkAndPromptIfNeeded() // terminates if denied
         accessibility.startPolling()
 
+        battery.onChange = { [weak self] suffix in
+            self?.menuBar.setBatterySuffix(suffix)
+        }
         controllers.onActiveChanged = { [weak self] _ in
+            self?.rebindBattery()
             self?.refreshMenuBarState()
         }
         controllers.start()
@@ -59,6 +65,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         controllers.stop()
         configManager.stop()
         accessibility.stop()
+        battery.stop()
     }
 
     // MARK: - menu bar wiring
@@ -94,7 +101,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menuBar.onAbout = { [weak self] in self?.showAboutPanel() }
         menuBar.onQuit  = { NSApp.terminate(nil) }
         menuBar.onToggleLaunchAtLogin = { [weak self] in self?.launchAtLogin.handleClick() }
-        menuBar.onMenuWillOpen = { [weak self] in self?.launchAtLogin.refresh() }
+        menuBar.onMenuWillOpen = { [weak self] in
+            self?.launchAtLogin.refresh()
+            self?.battery.refresh()
+        }
+    }
+
+    private func rebindBattery() {
+        let target: GCController? = (accessibility.state == .granted) ? controllers.active : nil
+        battery.bind(controller: target)
     }
 
     private func refreshMenuBarState() {
