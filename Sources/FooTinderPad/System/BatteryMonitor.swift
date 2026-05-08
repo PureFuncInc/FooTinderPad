@@ -19,6 +19,12 @@ enum BatterySuffix: Equatable {
 /// Instance methods drive a 30 s timer and emit `onChange` only when the
 /// rendered suffix actually moves; the static helper below is the pure
 /// rendering rule.
+///
+/// Naming note: this class uses `current` / `onChange` rather than the
+/// `state` / `onStateChange` pair that `AccessibilityGate` and
+/// `LaunchAtLogin` use. `BatterySuffix` is a presentation value (the
+/// concrete string to render), not a domain state, so `state` would
+/// mislead. The deviation is intentional.
 final class BatteryMonitor {
 
     /// Polling cadence. Battery levels move slowly, and menu re-opens trigger
@@ -44,6 +50,9 @@ final class BatteryMonitor {
     /// Bind to a controller (or unbind by passing nil). Tears down the previous
     /// timer and starts a fresh one when the new target is non-nil. A read +
     /// possible `onChange` always follows so the UI converges immediately.
+    ///
+    /// Must be called from the main thread — `Timer.scheduledTimer` uses the
+    /// current run loop, and the only caller (`AppDelegate`) is main-thread.
     func bind(controller: GCController?) {
         self.controller = controller
         timer?.invalidate()
