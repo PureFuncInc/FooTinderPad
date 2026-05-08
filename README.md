@@ -66,7 +66,7 @@ make clean && make install
 | R1 | Return | 確認 / 換行 |
 | L2 | LeftCmd | 按住搭配實體鍵盤組合 Cmd 快捷鍵 |
 | R2 | RightCmd | 同上, 食指搆得到的位置, 適合右手切換 app |
-| L3 | Cmd+Z | Undo |
+| L3 | `/` | Slash (常用於搜尋啟動) |
 | R3 | 滑鼠右鍵 | Context menu |
 | D-pad ↑↓←→ | 滑鼠微移動 | `dpad: "mouse"`, `dpadMouseSpeed: 3`, 使用原始碼內建線性曲線 |
 | Create (左上小鈕) | Cmd+V | 貼上 |

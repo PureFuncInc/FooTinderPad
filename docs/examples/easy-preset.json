@@ -11,7 +11,7 @@
     "rightShoulder": { "type": "key", "key": "Return" },
     "leftTrigger": { "type": "key", "key": "LeftCmd" },
     "rightTrigger": { "type": "key", "key": "RightCmd" },
-    "leftThumbstickButton": { "type": "key", "key": "Cmd+Z" },
+    "leftThumbstickButton": { "type": "key", "key": "Slash" },
     "rightThumbstickButton": { "type": "mouseButton", "button": "right" },
     "dpadUp": { "type": "key", "key": "Up", "repeat": true },
     "dpadDown": { "type": "key", "key": "Down", "repeat": true },
