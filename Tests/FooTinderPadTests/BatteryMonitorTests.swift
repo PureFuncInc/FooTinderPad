@@ -73,4 +73,10 @@ final class BatteryMonitorTests: XCTestCase {
         let s = BatteryMonitor.suffix(level: 1.5, state: .charging)
         XCTAssertEqual(s, .full)
     }
+
+    func testDischargingAtZero() {
+        let s = BatteryMonitor.suffix(level: 0.0, state: .discharging)
+        XCTAssertEqual(s, .discharging(level: 0))
+        XCTAssertTrue(s.isLow, "0% is the bottom of the low band")
+    }
 }

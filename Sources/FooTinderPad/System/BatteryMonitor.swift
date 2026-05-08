@@ -15,6 +15,9 @@ enum BatterySuffix: Equatable {
     }
 }
 
+/// Owns the lifetime of battery polling for the active controller.
+/// The static helper below is the pure rendering rule; instance methods
+/// (added in the next task) drive a 30 s timer and emit `onChange`.
 final class BatteryMonitor {
 
     static func suffix(level: Float, state: GCDeviceBattery.State) -> BatterySuffix {
