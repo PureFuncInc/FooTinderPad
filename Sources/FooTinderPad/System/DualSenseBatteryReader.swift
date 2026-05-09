@@ -26,10 +26,11 @@ final class DualSenseBatteryReader {
     private static let log = Logger(subsystem: "com.purefuncinc.FooTinderPad", category: "DualSenseBatteryReader")
 
     /// Sony Vendor ID.
-    private static let SONY_VID: Int = 0x054C
+    private static let sonyVendorID: Int = 0x054C
     /// PS5 DualSense Product ID.
-    private static let DUALSENSE_PID: Int = 0x0CE6
-    /// DualSense Bluetooth report 0x31 is 78 bytes; over-allocate for safety.
+    private static let dualSensePID: Int = 0x0CE6
+    /// DualSense Bluetooth report 0x31 is 78 bytes; we allocate 128 (next
+    /// power-of-two) to give IOKit headroom and align cleanly.
     private static let bufferLength = 128
 
     /// Parse the battery byte at offset 54 of a DualSense Bluetooth `0x31`
@@ -63,12 +64,21 @@ final class DualSenseBatteryReader {
 
     private var manager: IOHIDManager?
     private var device: IOHIDDevice?
+
+    /// Opaque `self` pointer for C-callback `context` arguments. Computed each
+    /// call (zero cost) so there's only one place to change if the bridging
+    /// pattern is ever revisited.
+    private var opaque: UnsafeMutableRawPointer {
+        Unmanaged.passUnretained(self).toOpaque()
+    }
+
     private let reportBuffer: UnsafeMutablePointer<UInt8> =
         UnsafeMutablePointer<UInt8>.allocate(capacity: bufferLength)
 
     deinit {
-        // detach() is the proper teardown path; deinit just frees the buffer
-        // in case we're torn down without an explicit detach (e.g. test exit).
+        // detach() is the proper teardown path; this is a defensive safety
+        // net that frees the buffer if the reader is released without one
+        // (e.g. process teardown).
         reportBuffer.deallocate()
     }
 
@@ -79,14 +89,13 @@ final class DualSenseBatteryReader {
 
         let mgr = IOHIDManagerCreate(kCFAllocatorDefault, IOHIDOptionsType(kIOHIDOptionsTypeNone))
         let matching: [String: Any] = [
-            kIOHIDVendorIDKey: Self.SONY_VID,
-            kIOHIDProductIDKey: Self.DUALSENSE_PID,
+            kIOHIDVendorIDKey: Self.sonyVendorID,
+            kIOHIDProductIDKey: Self.dualSensePID,
         ]
         IOHIDManagerSetDeviceMatching(mgr, matching as CFDictionary)
 
-        let selfPtr = Unmanaged.passUnretained(self).toOpaque()
-        IOHIDManagerRegisterDeviceMatchingCallback(mgr, Self.matchedCallback, selfPtr)
-        IOHIDManagerRegisterDeviceRemovalCallback(mgr, Self.removedCallback, selfPtr)
+        IOHIDManagerRegisterDeviceMatchingCallback(mgr, Self.matchedCallback, opaque)
+        IOHIDManagerRegisterDeviceRemovalCallback(mgr, Self.removedCallback, opaque)
         IOHIDManagerScheduleWithRunLoop(mgr, CFRunLoopGetMain(), CFRunLoopMode.defaultMode.rawValue)
 
         let r = IOHIDManagerOpen(mgr, IOOptionBits(kIOHIDOptionsTypeNone))
@@ -101,10 +110,12 @@ final class DualSenseBatteryReader {
     /// Close IOHIDManager + IOHIDDevice, drop cached state. Idempotent.
     func detach() {
         guard let mgr = manager else { return }
+        // Unschedule first so no pending input-report callback can fire after
+        // the device is closed; then close the device, then the manager.
+        IOHIDManagerUnscheduleFromRunLoop(mgr, CFRunLoopGetMain(), CFRunLoopMode.defaultMode.rawValue)
         if let dev = device {
             IOHIDDeviceClose(dev, IOOptionBits(kIOHIDOptionsTypeNone))
         }
-        IOHIDManagerUnscheduleFromRunLoop(mgr, CFRunLoopGetMain(), CFRunLoopMode.defaultMode.rawValue)
         IOHIDManagerClose(mgr, IOOptionBits(kIOHIDOptionsTypeNone))
         manager = nil
         device = nil
@@ -128,8 +139,7 @@ final class DualSenseBatteryReader {
         }
         device = matchedDevice
 
-        let selfPtr = Unmanaged.passUnretained(self).toOpaque()
-        IOHIDDeviceRegisterInputReportCallback(matchedDevice, reportBuffer, Self.bufferLength, Self.inputReportCallback, selfPtr)
+        IOHIDDeviceRegisterInputReportCallback(matchedDevice, reportBuffer, Self.bufferLength, Self.inputReportCallback, opaque)
 
         // Trigger 0x31 mode by reading feature report 0x05 (calibration).
         // The data we get back is discarded — only the mode flip matters.
