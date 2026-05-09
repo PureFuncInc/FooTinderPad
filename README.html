@@ -870,6 +870,7 @@
 
     <div class="card" style="margin-top:1.5rem">
       <h3>搖桿與 D-pad 角色</h3>
+      <p>搖桿與 D-pad 的移動曲線寫在原始碼中，不從 JSON config 調整。</p>
       <p>
         <code>leftStick</code> / <code>rightStick</code> 接受
         <code>"mouse"</code>&ensp;<code>"scroll"</code>&ensp;<code>"none"</code> 三種角色。
@@ -879,6 +880,38 @@
         <code>"bindings"</code>&ensp;<code>"mouse"</code>&ensp;<code>"scroll"</code>&ensp;<code>"none"</code> 四種角色。<br>
         預設設定使用 <code>"bindings"</code> 搭配方向鍵綁定；若想改成線性滑鼠微移動，設為 <code>"mouse"</code> 並加入 <code>dpadMouseSpeed</code>。
       </p>
+    </div>
+    <div class="terminal" style="margin-top:1rem">
+      <div class="terminal-bar">
+        <div class="dot dot-r"></div>
+        <div class="dot dot-y"></div>
+        <div class="dot dot-g"></div>
+        <span class="term-filename">config.json（dpad mouse 範例）</span>
+      </div>
+      <pre>{
+  <span class="jk">"deadzone"</span><span class="jp">:</span> <span class="jn">0.15</span><span class="jp">,</span>
+  <span class="jk">"mouseSpeed"</span><span class="jp">:</span> <span class="jn">64</span><span class="jp">,</span>
+  <span class="jk">"scrollSpeed"</span><span class="jp">:</span> <span class="jn">2</span><span class="jp">,</span>
+  <span class="jk">"leftStick"</span><span class="jp">:</span> <span class="js">"mouse"</span><span class="jp">,</span>
+  <span class="jk">"rightStick"</span><span class="jp">:</span> <span class="js">"scroll"</span><span class="jp">,</span>
+  <span class="jk">"dpad"</span><span class="jp">:</span> <span class="js">"mouse"</span><span class="jp">,</span>
+  <span class="jk">"dpadMouseSpeed"</span><span class="jp">:</span> <span class="jn">4</span><span class="jp">,</span>
+  <span class="jk">"dpadScrollSpeed"</span><span class="jp">:</span> <span class="jn">2</span><span class="jp">,</span>
+  <span class="jk">"bindings"</span><span class="jp">:</span> <span class="jp">{</span>
+    <span class="jk">"buttonA"</span><span class="jp">:</span>               <span class="jp">{</span> <span class="jk">"type"</span><span class="jp">:</span> <span class="js">"key"</span><span class="jp">,</span>         <span class="jk">"key"</span><span class="jp">:</span> <span class="js">"Space"</span><span class="jp">,</span>          <span class="jk">"repeat"</span><span class="jp">:</span> <span class="jb">true</span> <span class="jp">},</span>
+    <span class="jk">"buttonB"</span><span class="jp">:</span>               <span class="jp">{</span> <span class="jk">"type"</span><span class="jp">:</span> <span class="js">"key"</span><span class="jp">,</span>         <span class="jk">"key"</span><span class="jp">:</span> <span class="js">"Return"</span> <span class="jp">},</span>
+    <span class="jk">"buttonX"</span><span class="jp">:</span>               <span class="jp">{</span> <span class="jk">"type"</span><span class="jp">:</span> <span class="js">"mouseButton"</span><span class="jp">,</span> <span class="jk">"button"</span><span class="jp">:</span> <span class="js">"left"</span> <span class="jp">},</span>
+    <span class="jk">"buttonY"</span><span class="jp">:</span>               <span class="jp">{</span> <span class="jk">"type"</span><span class="jp">:</span> <span class="js">"key"</span><span class="jp">,</span>         <span class="jk">"key"</span><span class="jp">:</span> <span class="js">"Backspace"</span><span class="jp">,</span>      <span class="jk">"repeat"</span><span class="jp">:</span> <span class="jb">true</span> <span class="jp">},</span>
+    <span class="jk">"leftShoulder"</span><span class="jp">:</span>          <span class="jp">{</span> <span class="jk">"type"</span><span class="jp">:</span> <span class="js">"key"</span><span class="jp">,</span>         <span class="jk">"key"</span><span class="jp">:</span> <span class="js">"Escape"</span> <span class="jp">},</span>
+    <span class="jk">"rightShoulder"</span><span class="jp">:</span>         <span class="jp">{</span> <span class="jk">"type"</span><span class="jp">:</span> <span class="js">"mouseButton"</span><span class="jp">,</span> <span class="jk">"button"</span><span class="jp">:</span> <span class="js">"right"</span> <span class="jp">},</span>
+    <span class="jk">"leftTrigger"</span><span class="jp">:</span>           <span class="jp">{</span> <span class="jk">"type"</span><span class="jp">:</span> <span class="js">"key"</span><span class="jp">,</span>         <span class="jk">"key"</span><span class="jp">:</span> <span class="js">"RightShift"</span> <span class="jp">},</span>
+    <span class="jk">"rightTrigger"</span><span class="jp">:</span>          <span class="jp">{</span> <span class="jk">"type"</span><span class="jp">:</span> <span class="js">"key"</span><span class="jp">,</span>         <span class="jk">"key"</span><span class="jp">:</span> <span class="js">"Alt+Return"</span> <span class="jp">},</span>
+    <span class="jk">"leftThumbstickButton"</span><span class="jp">:</span>  <span class="jp">{</span> <span class="jk">"type"</span><span class="jp">:</span> <span class="js">"key"</span><span class="jp">,</span>         <span class="jk">"key"</span><span class="jp">:</span> <span class="js">"Cmd+C"</span> <span class="jp">},</span>
+    <span class="jk">"rightThumbstickButton"</span><span class="jp">:</span> <span class="jp">{</span> <span class="jk">"type"</span><span class="jp">:</span> <span class="js">"key"</span><span class="jp">,</span>         <span class="jk">"key"</span><span class="jp">:</span> <span class="js">"Cmd+V"</span> <span class="jp">},</span>
+    <span class="jk">"createButton"</span><span class="jp">:</span>          <span class="jp">{</span> <span class="jk">"type"</span><span class="jp">:</span> <span class="js">"key"</span><span class="jp">,</span>         <span class="jk">"key"</span><span class="jp">:</span> <span class="js">"Fn+Ctrl+Left"</span> <span class="jp">},</span>
+    <span class="jk">"optionsButton"</span><span class="jp">:</span>         <span class="jp">{</span> <span class="jk">"type"</span><span class="jp">:</span> <span class="js">"key"</span><span class="jp">,</span>         <span class="jk">"key"</span><span class="jp">:</span> <span class="js">"Fn+Ctrl+Right"</span> <span class="jp">}</span>
+  <span class="jp">}</span>
+<span class="jp">}</span></pre>
     </div>
   </section>
 
