@@ -75,7 +75,7 @@ make clean && make install
 
 ## Battery indicator
 
-當控制器連線且回報電量時, menu bar 圖示右側會顯示百分比, 例如 `🎮 82%`。充電中加上 `⚡` 前綴 (`🎮 ⚡82%`), 充滿時顯示 `🎮 ⚡100%`。放電時若降到 20% 或以下, 數字轉為紅色提醒充電 (充電中的低電量不轉紅, 因為已在充電)。控制器未提供電量資訊 (有線通用 HID, 部分第三方型號) 時不顯示百分比, 只留 icon。
+當控制器連線且回報電量時, menu bar 圖示右側會顯示百分比, 例如 `🎮 82%`。充電中加上 `⚡` 前綴 (`🎮 ⚡82%`), 充滿時顯示 `🎮 ⚡100%`。放電時若降到 20% 或以下, 數字轉為紅色提醒充電 (充電中的低電量不轉紅, 因為已在充電)。DualSense over Bluetooth 和 Xbox Wireless Controller over BLE 都有 fallback reader: macOS `GameController` 沒提供電量時, app 會改走控制器專用讀取路徑。控制器未提供電量資訊 (有線通用 HID, 部分第三方型號) 時不顯示百分比, 只留 icon。
 
 ## Launch at Login
 

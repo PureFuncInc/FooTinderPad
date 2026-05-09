@@ -18,5 +18,7 @@
     <string>AppIcon</string>
     <key>GCSupportsControllerUserInteraction</key>
     <true/>
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>FooTinderPad reads controller battery level over Bluetooth when macOS does not expose it through GameController.</string>
 </dict>
 </plist>

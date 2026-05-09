@@ -1,5 +1,6 @@
 import Foundation
 import GameController
+import os
 
 enum BatterySuffix: Equatable {
     case none                         // unknown / no battery / no controller
@@ -26,6 +27,7 @@ enum BatterySuffix: Equatable {
 /// concrete string to render), not a domain state, so `state` would
 /// mislead. The deviation is intentional.
 final class BatteryMonitor {
+    private let log = Logger(subsystem: "com.purefuncinc.FooTinderPad", category: "BatteryMonitor")
 
     /// Polling cadence. Battery levels move slowly, and menu re-opens trigger
     /// an extra refresh on demand, so 30 s is plenty fresh for the menu bar.
@@ -39,12 +41,17 @@ final class BatteryMonitor {
     /// IOKit fallback for BT-only DualSense, where `GCController.battery`
     /// returns `.none`. See spec 2026-05-09-dualsense-bluetooth-battery-fallback.
     private let dualsense = DualSenseBatteryReader()
+    private let xbox = XboxBatteryReader()
 
     /// `GCController.vendorName` for the DualSense on macOS is reliably
     /// "DualSense Wireless Controller". Substring match keeps us robust to
     /// future suffixes (e.g. "Edge") and any USB-vs-BT vendorName variant.
     private static func isDualSense(_ c: GCController) -> Bool {
         return c.vendorName?.lowercased().contains("dualsense") == true
+    }
+
+    private static func isXbox(_ c: GCController) -> Bool {
+        return c.vendorName?.lowercased().contains("xbox") == true
     }
 
     static func suffix(level: Float, state: GCDeviceBattery.State) -> BatterySuffix {
@@ -68,6 +75,7 @@ final class BatteryMonitor {
         self.controller = controller
         timer?.invalidate()
         timer = nil
+        logBinding(for: controller)
         if controller != nil {
             timer = Timer.scheduledTimer(withTimeInterval: Self.refreshInterval, repeats: true) { [weak self] _ in
                 self?.refresh()
@@ -88,21 +96,55 @@ final class BatteryMonitor {
             dualsense.onChange = nil
             dualsense.detach()
         }
+        if let c = controller, Self.isXbox(c) {
+            xbox.onChange = { [weak self] _ in self?.refresh() }
+            xbox.attach()
+        } else {
+            xbox.onChange = nil
+            xbox.detach()
+        }
         refresh()
+    }
+
+    private func logBinding(for controller: GCController?) {
+        guard let controller else {
+            log.info("battery unbound: no active controller")
+            return
+        }
+        let name = controller.vendorName ?? "?"
+        guard let battery = controller.battery else {
+            log.info("battery bind: controller=\(name, privacy: .public) gcBattery=nil")
+            return
+        }
+        log.info("battery bind: controller=\(name, privacy: .public) gcState=\(Self.describe(battery.batteryState), privacy: .public) gcLevel=\(battery.batteryLevel, privacy: .public)")
+    }
+
+    private static func describe(_ state: GCDeviceBattery.State) -> String {
+        switch state {
+        case .unknown: return "unknown"
+        case .discharging: return "discharging"
+        case .charging: return "charging"
+        case .full: return "full"
+        @unknown default: return "unrecognized"
+        }
     }
 
     /// Re-read the battery property and fire onChange iff the rendered suffix changed.
     /// Cheap — safe to call from `menuWillOpen`.
     func refresh() {
+        if let c = controller, Self.isXbox(c) {
+            xbox.refresh()
+        }
         let gcc: BatterySuffix
         if let battery = controller?.battery {
             gcc = Self.suffix(level: battery.batteryLevel, state: battery.batteryState)
         } else {
             gcc = .none
         }
-        // Fallback merge: GCC wins when it has data; DualSense IOKit reader
-        // fills in only when GCC reports nothing.
-        let new = (gcc == .none) ? dualsense.current : gcc
+        // Fallback merge: GCC wins when it has data; controller-specific
+        // readers fill in only when GCC reports nothing.
+        let fallback = dualsense.current != .none ? dualsense.current : xbox.current
+        let new = (gcc == .none) ? fallback : gcc
         if new != current {
             current = new
             onChange?(new)
@@ -116,5 +158,6 @@ final class BatteryMonitor {
         controller = nil
         onChange = nil
         dualsense.detach()
+        xbox.detach()
     }
 }
