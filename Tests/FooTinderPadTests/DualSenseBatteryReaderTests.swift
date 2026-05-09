@@ -79,7 +79,8 @@ final class DualSenseBatteryReaderTests: XCTestCase {
     }
 
     func testParseLevelOverflowClamped() {
-        // 0x0F → high=0 (discharging), low=15 (out of documented 0..10 range) — clamped to 10 → 100%
+        // 0x0F → high=0 (discharging), low=15 (out of documented 0..10 range) — clamped to 10 → 100%.
+        // State 0 (discharging) never collapses to .full at 100%; only state 1 (charging) does.
         let s = DualSenseBatteryReader.parse(report: report(byte54: 0x0F))
         XCTAssertEqual(s, .discharging(level: 100))
     }
@@ -92,5 +93,18 @@ final class DualSenseBatteryReaderTests: XCTestCase {
 
     func testParseEmptyReportReturnsNone() {
         XCTAssertEqual(DualSenseBatteryReader.parse(report: []), .none)
+    }
+
+    func testParseExactMinimumLengthIsValid() {
+        // 55 bytes is the minimum that makes index 54 accessible.
+        var buf = [UInt8](repeating: 0, count: 55)
+        buf[54] = 0x07
+        XCTAssertEqual(DualSenseBatteryReader.parse(report: buf), .discharging(level: 70))
+    }
+
+    func testParseOneByteTooShortReturnsNone() {
+        // 54 bytes — byte index 54 does not exist; guard must reject.
+        let buf = [UInt8](repeating: 0, count: 54)
+        XCTAssertEqual(DualSenseBatteryReader.parse(report: buf), .none)
     }
 }
