@@ -82,6 +82,10 @@ final class BatteryMonitor {
             dualsense.onChange = { [weak self] _ in self?.refresh() }
             dualsense.attach()
         } else {
+            // Clear the stale closure first so a non-DualSense rebind
+            // doesn't leave a closure pointing at this monitor sitting
+            // on the (about-to-be-detached) reader.
+            dualsense.onChange = nil
             dualsense.detach()
         }
         refresh()
