@@ -36,6 +36,17 @@ final class BatteryMonitor {
     private(set) var current: BatterySuffix = .none
     var onChange: ((BatterySuffix) -> Void)?
 
+    /// IOKit fallback for BT-only DualSense, where `GCController.battery`
+    /// returns `.none`. See spec 2026-05-09-dualsense-bluetooth-battery-fallback.
+    private let dualsense = DualSenseBatteryReader()
+
+    /// `GCController.vendorName` for the DualSense on macOS is reliably
+    /// "DualSense Wireless Controller". Substring match keeps us robust to
+    /// future suffixes (e.g. "Edge") and any USB-vs-BT vendorName variant.
+    private static func isDualSense(_ c: GCController) -> Bool {
+        return c.vendorName?.lowercased().contains("dualsense") == true
+    }
+
     static func suffix(level: Float, state: GCDeviceBattery.State) -> BatterySuffix {
         let n = Int((max(0, min(1, level)) * 100).rounded())
         switch state {
@@ -62,18 +73,36 @@ final class BatteryMonitor {
                 self?.refresh()
             }
         }
+        // Engage the IOKit fallback only when the active controller is a
+        // DualSense — otherwise its battery would leak into the icon of
+        // whichever controller is actually being driven (e.g. an Xbox pad
+        // that's also connected). Reader is idempotent: re-attaching the
+        // same device is a no-op.
+        if let c = controller, Self.isDualSense(c) {
+            dualsense.onChange = { [weak self] _ in self?.refresh() }
+            dualsense.attach()
+        } else {
+            // Clear the stale closure first so a non-DualSense rebind
+            // doesn't leave a closure pointing at this monitor sitting
+            // on the (about-to-be-detached) reader.
+            dualsense.onChange = nil
+            dualsense.detach()
+        }
         refresh()
     }
 
     /// Re-read the battery property and fire onChange iff the rendered suffix changed.
     /// Cheap — safe to call from `menuWillOpen`.
     func refresh() {
-        let new: BatterySuffix
+        let gcc: BatterySuffix
         if let battery = controller?.battery {
-            new = Self.suffix(level: battery.batteryLevel, state: battery.batteryState)
+            gcc = Self.suffix(level: battery.batteryLevel, state: battery.batteryState)
         } else {
-            new = .none
+            gcc = .none
         }
+        // Fallback merge: GCC wins when it has data; DualSense IOKit reader
+        // fills in only when GCC reports nothing.
+        let new = (gcc == .none) ? dualsense.current : gcc
         if new != current {
             current = new
             onChange?(new)
@@ -86,5 +115,6 @@ final class BatteryMonitor {
         timer = nil
         controller = nil
         onChange = nil
+        dualsense.detach()
     }
 }
