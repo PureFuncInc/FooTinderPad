@@ -106,7 +106,7 @@ make clean && make install
 `leftStick` / `rightStick` 屬性接受 `"mouse"`、 `"scroll"`、 `"none"` 三種角色。
 
 搖桿與 D-pad 的移動曲線寫在原始碼中, 不從 JSON config 調整。`dpad` 屬性接受 `"bindings"`、 `"mouse"`、 `"scroll"`、 `"none"` 四種角色。
-預設設定使用 `"mouse"` 做線性滑鼠微移動；若想恢復方向鍵綁定, 設為 `"bindings"` 並在 `bindings` 裡加入 `dpadUp` / `dpadDown` / `dpadLeft` / `dpadRight`。
+預設設定使用 `"bindings"` 搭配方向鍵綁定；若想改成線性滑鼠微移動, 設為 `"mouse"` 並加入 `dpadMouseSpeed`。
 
 ```json
 {

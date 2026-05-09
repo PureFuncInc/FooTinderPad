@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FooTinderPad — 遊戲控制器 → macOS 鍵鼠</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #050c14;
+      --bg2:       #07101d;
+      --card:      #0b1929;
+      --card2:     #0e1f35;
+      --border:    #152a47;
+      --blue:      #3b82f6;
+      --blue-dim:  rgba(59,130,246,0.12);
+      --blue-glow: rgba(59,130,246,0.4);
+      --cyan:      #06b6d4;
+      --green:     #10b981;
+      --purple:    #8b5cf6;
+      --amber:     #f59e0b;
+      --red:       #ef4444;
+      --text:      #dde6f0;
+      --text2:     #8ea8c3;
+      --muted:     #3f5570;
+      --mono:      'IBM Plex Mono', 'Courier New', monospace;
+      --display:   'Orbitron', sans-serif;
+      --body:      'IBM Plex Sans', system-ui, sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--body);
+      font-size: 15px;
+      line-height: 1.75;
+      overflow-x: hidden;
+    }
+
+    /* CRT scanlines */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        rgba(0,0,0,0.035) 3px,
+        rgba(0,0,0,0.035) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* ── Nav ─────────────────────────────────────────────────── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2.5rem;
+      height: 52px;
+      background: rgba(5,12,20,0.88);
+      backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-brand {
+      font-family: var(--display);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--blue);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    nav ul {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    nav a {
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text2);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    nav a:hover { color: var(--blue); }
+
+    /* ── Hero ────────────────────────────────────────────────── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 6rem 2rem 5rem;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 30%, rgba(59,130,246,0.09) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 40% at 20% 80%, rgba(99,102,241,0.06) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .hero-grid-lines {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-icon {
+      font-size: 4.5rem;
+      margin-bottom: 1.25rem;
+      position: relative;
+      animation: heroFloat 3.5s ease-in-out infinite;
+      filter: drop-shadow(0 0 28px rgba(59,130,246,0.55));
+    }
+
+    @keyframes heroFloat {
+      0%,100% { transform: translateY(0px); }
+      50% { transform: translateY(-14px); }
+    }
+
+    .hero h1 {
+      font-family: var(--display);
+      font-size: clamp(2.8rem, 9vw, 6rem);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      background: linear-gradient(140deg, #ffffff 0%, #93c5fd 45%, #818cf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.05;
+      margin-bottom: 1.2rem;
+      position: relative;
+    }
+
+    .hero-tagline {
+      font-size: clamp(1rem, 2.5vw, 1.2rem);
+      color: var(--text2);
+      max-width: 560px;
+      margin: 0 auto 2.5rem;
+      font-weight: 300;
+      line-height: 1.65;
+      position: relative;
+    }
+
+    .hero-tagline em {
+      color: var(--cyan);
+      font-style: normal;
+      font-weight: 500;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      background: var(--blue);
+      color: #fff;
+      text-decoration: none;
+      padding: 0.72rem 1.6rem;
+      border-radius: 0.375rem;
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      letter-spacing: 0.03em;
+      transition: all 0.2s;
+      box-shadow: 0 0 20px var(--blue-glow);
+      position: relative;
+    }
+
+    .btn-primary:hover {
+      background: #2563eb;
+      box-shadow: 0 0 36px var(--blue-glow);
+      transform: translateY(-2px);
+    }
+
+    .hero-scroll-hint {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+      color: var(--muted);
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-family: var(--mono);
+      animation: scrollHint 2s ease-in-out infinite;
+    }
+
+    @keyframes scrollHint {
+      0%,100% { opacity: 0.4; transform: translateX(-50%) translateY(0); }
+      50% { opacity: 0.9; transform: translateX(-50%) translateY(4px); }
+    }
+
+    /* Fade-in stagger */
+    .hero > * { animation: fadeUp 0.65s cubic-bezier(0.22,1,0.36,1) both; }
+    .hero-bg  { animation: none; }
+    .hero-grid-lines { animation: none; }
+    .hero-icon     { animation: heroFloat 3.5s ease-in-out infinite, fadeUp 0.65s cubic-bezier(0.22,1,0.36,1) 0s both; }
+    .hero h1       { animation-delay: 0.1s; }
+    .hero-tagline  { animation-delay: 0.2s; }
+    .btn-primary   { animation-delay: 0.3s; }
+    .hero-scroll-hint { animation: scrollHint 2s ease-in-out 1s infinite; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Main ────────────────────────────────────────────────── */
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 2.5rem 8rem;
+    }
+
+    /* ── Sections ────────────────────────────────────────────── */
+    section {
+      margin-bottom: 5.5rem;
+      scroll-margin-top: 4.5rem;
+    }
+
+    .section-eyebrow {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--blue);
+      margin-bottom: 0.45rem;
+    }
+
+    h2 {
+      font-family: var(--display);
+      font-size: clamp(1.35rem, 3vw, 1.8rem);
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: #fff;
+      margin-bottom: 1.4rem;
+      padding-bottom: 0.7rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h3 {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--text);
+      margin: 1.75rem 0 0.65rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    p { color: var(--text2); margin-bottom: 1rem; }
+    p:last-child { margin-bottom: 0; }
+
+    /* ── Requirement pills ───────────────────────────────────── */
+    .req-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+      margin-top: 0.5rem;
+    }
+
+    .req-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.6rem 1.1rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 0.4rem;
+      font-size: 0.85rem;
+      color: var(--text);
+      transition: border-color 0.2s;
+    }
+
+    .req-pill:hover { border-color: rgba(59,130,246,0.4); }
+
+    .req-pill .pill-icon { font-size: 1.1rem; }
+
+    .req-pill .pill-text { display: flex; flex-direction: column; }
+
+    .req-pill .pill-name { font-weight: 400; }
+
+    .req-pill .pill-sub {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--muted);
+      margin-top: 0.05rem;
+    }
+
+    /* ── Terminal blocks ─────────────────────────────────────── */
+    .terminal {
+      background: #030810;
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      overflow: hidden;
+      margin: 1rem 0;
+    }
+
+    .terminal-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.6rem 1rem;
+      background: #060f1e;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
+
+    .term-filename {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--muted);
+      margin-left: auto;
+    }
+
+    .terminal pre {
+      padding: 1.15rem 1.5rem;
+      font-family: var(--mono);
+      font-size: 0.865rem;
+      line-height: 1.65;
+      overflow-x: auto;
+    }
+
+    .sh-prompt { color: var(--green); user-select: none; }
+    .sh-cmd    { color: var(--text); }
+    .sh-arg    { color: var(--cyan); }
+
+    /* JSON syntax */
+    .jk  { color: #93c5fd; }  /* key    */
+    .js  { color: #86efac; }  /* string */
+    .jn  { color: #fb923c; }  /* number */
+    .jb  { color: #c084fc; }  /* bool   */
+    .jp  { color: var(--muted); } /* punc */
+
+    /* ── Config two-col ──────────────────────────────────────── */
+    .config-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.4fr;
+      gap: 1.75rem;
+      align-items: start;
+      margin-top: 1.25rem;
+    }
+
+    @media (max-width: 720px) {
+      .config-grid { grid-template-columns: 1fr; }
+    }
+
+    .ctrl-imgs {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    .ctrl-imgs img {
+      width: 100%;
+      border-radius: 0.5rem;
+      border: 1px solid var(--border);
+      background: var(--card);
+    }
+
+    .ctrl-img-caption {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--muted);
+      text-align: center;
+      margin-top: -0.5rem;
+    }
+
+    /* ── Tables ──────────────────────────────────────────────── */
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 0.5rem;
+      border: 1px solid var(--border);
+      margin: 1rem 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+
+    thead th {
+      background: var(--card2);
+      padding: 0.7rem 1rem;
+      text-align: left;
+      font-family: var(--mono);
+      font-size: 0.66rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid rgba(21,42,71,0.6);
+      transition: background 0.15s;
+    }
+    tbody tr:hover { background: rgba(59,130,246,0.04); }
+    tbody tr:last-child { border-bottom: none; }
+
+    td {
+      padding: 0.65rem 1rem;
+      vertical-align: middle;
+      color: var(--text2);
+    }
+
+    td:first-child { color: var(--text); }
+
+    code {
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      color: var(--cyan);
+      background: rgba(6,182,212,0.08);
+      padding: 0.12em 0.42em;
+      border-radius: 0.2rem;
+    }
+
+    /* ── Button badges ───────────────────────────────────────── */
+    .bb {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 1.55rem;
+      height: 1.55rem;
+      border-radius: 50%;
+      font-size: 0.72rem;
+      font-weight: 700;
+      border: 1.5px solid currentColor;
+      padding: 0 0.28rem;
+      line-height: 1;
+      vertical-align: middle;
+    }
+
+    .bb-sq { border-radius: 0.28rem; }
+
+    .bb-cross  { color: #f472b6; background: rgba(244,114,182,0.1); }
+    .bb-circle { color: #f87171; background: rgba(248,113,113,0.1); }
+    .bb-square { color: #c084fc; background: rgba(192,132,252,0.1); }
+    .bb-tri    { color: #34d399; background: rgba(52,211,153,0.1); border-radius: 0.28rem; }
+    .bb-a      { color: #4ade80; background: rgba(74,222,128,0.1); }
+    .bb-b      { color: #f87171; background: rgba(248,113,113,0.1); }
+    .bb-x      { color: #60a5fa; background: rgba(96,165,250,0.1); }
+    .bb-y      { color: #fbbf24; background: rgba(251,191,36,0.1); }
+    .bb-sh     { color: var(--text2); background: var(--card2); border-radius: 0.28rem; border-color: var(--border); }
+
+    /* ── Feature cards ───────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 0.65rem;
+      padding: 1.6rem 1.75rem;
+      margin: 1rem 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1.5px;
+      background: linear-gradient(90deg, transparent, var(--blue), transparent);
+    }
+
+    .card h3 { margin-top: 0; }
+
+    /* ── Battery demo ────────────────────────────────────────── */
+    .battery-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin: 1rem 0;
+    }
+
+    .batt {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-family: var(--mono);
+      font-size: 0.88rem;
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 0.375rem;
+      padding: 0.45rem 0.95rem;
+    }
+
+    .batt-normal .pct { color: var(--text); }
+    .batt-charging { border-color: rgba(250,204,21,0.3); }
+    .batt-charging .pct { color: var(--amber); }
+    .batt-full { border-color: rgba(16,185,129,0.3); }
+    .batt-full .pct { color: var(--green); }
+    .batt-warn { border-color: rgba(239,68,68,0.35); }
+    .batt-warn .pct { color: var(--red); }
+
+    /* ── Key chips ───────────────────────────────────────────── */
+    .key-cloud {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.38rem;
+      margin: 0.75rem 0;
+    }
+
+    .key-chip {
+      font-family: var(--mono);
+      font-size: 0.76rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 0.28rem;
+      padding: 0.22rem 0.55rem;
+      color: var(--text2);
+    }
+
+    /* ── Download link ───────────────────────────────────────── */
+    .dl-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: var(--blue);
+      text-decoration: none;
+      font-family: var(--mono);
+      font-size: 0.83rem;
+      border: 1px solid rgba(59,130,246,0.25);
+      padding: 0.35rem 0.85rem;
+      border-radius: 0.3rem;
+      transition: all 0.18s;
+      margin: 0.65rem 0 1.1rem;
+    }
+    .dl-link:hover {
+      background: rgba(59,130,246,0.07);
+      border-color: var(--blue);
+    }
+
+    /* ── Footer ──────────────────────────────────────────────── */
+    footer {
+      text-align: center;
+      padding: 2rem;
+      border-top: 1px solid var(--border);
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    footer a { color: var(--blue); text-decoration: none; }
+
+    ul.prose-list {
+      color: var(--text2);
+      padding-left: 1.3rem;
+      line-height: 1.95;
+    }
+
+    ul.prose-list li + li { }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <a href="#top" class="nav-brand">🎮 FooTinderPad</a>
+  <ul>
+    <li><a href="#install">安裝</a></li>
+    <li><a href="#config">設定</a></li>
+    <li><a href="#ps5">PS5 預設</a></li>
+    <li><a href="#buttons">按鈕</a></li>
+    <li><a href="#keys">按鍵</a></li>
+  </ul>
+</nav>
+
+<!-- Hero -->
+<div class="hero" id="top">
+  <div class="hero-bg"></div>
+  <div class="hero-grid-lines"></div>
+  <div class="hero-icon">🎮</div>
+  <h1>FooTinderPad</h1>
+  <p class="hero-tagline">
+    將<em>遊戲控制器</em>對應為 macOS 的<em>鍵盤與滑鼠</em>輸入，<br>
+    讓你能用搖桿操作整個系統。
+  </p>
+  <a href="#install" class="btn-primary">
+    <span>▸</span> 快速開始
+  </a>
+  <div class="hero-scroll-hint">↓ scroll</div>
+</div>
+
+<main>
+
+  <!-- Requirements -->
+  <section id="requirements">
+    <div class="section-eyebrow">// 系統需求</div>
+    <h2>Requirements</h2>
+    <div class="req-grid">
+      <div class="req-pill">
+        <span class="pill-icon">🍎</span>
+        <span class="pill-text">
+          <span class="pill-name">macOS 13 Ventura 以上</span>
+          <span class="pill-sub">最低系統版本</span>
+        </span>
+      </div>
+      <div class="req-pill">
+        <span class="pill-icon">⚙️</span>
+        <span class="pill-text">
+          <span class="pill-name">Swift 5.9 &nbsp;/&nbsp; Xcode 15+</span>
+          <span class="pill-sub">建置工具</span>
+        </span>
+      </div>
+      <div class="req-pill">
+        <span class="pill-icon">🕹️</span>
+        <span class="pill-text">
+          <span class="pill-name">Xbox / PlayStation Controller</span>
+          <span class="pill-sub">已配對的遊戲控制器</span>
+        </span>
+      </div>
+      <div class="req-pill">
+        <span class="pill-icon">♿</span>
+        <span class="pill-text">
+          <span class="pill-name">輔助使用 (Accessibility) 權限</span>
+          <span class="pill-sub">系統設定中授予</span>
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Install -->
+  <section id="install">
+    <div class="section-eyebrow">// 安裝</div>
+    <h2>Install</h2>
+    <div class="terminal">
+      <div class="terminal-bar">
+        <div class="dot dot-r"></div>
+        <div class="dot dot-y"></div>
+        <div class="dot dot-g"></div>
+        <span class="term-filename">Terminal</span>
+      </div>
+      <pre><span class="sh-prompt">$ </span><span class="sh-cmd">make</span> <span class="sh-arg">clean</span> <span class="sh-cmd"> &amp;&amp; make</span> <span class="sh-arg">install</span></pre>
+    </div>
+  </section>
+
+  <!-- Default Config -->
+  <section id="config">
+    <div class="section-eyebrow">// 預設設定</div>
+    <h2>預設設定</h2>
+    <div class="config-grid">
+      <div class="ctrl-imgs">
+        <div>
+          <img src="docs/front.png" alt="控制器正面">
+          <p class="ctrl-img-caption">控制器正面</p>
+        </div>
+        <div>
+          <img src="docs/back.png" alt="控制器背面">
+          <p class="ctrl-img-caption">控制器背面</p>
+        </div>
+      </div>
+      <div class="terminal">
+        <div class="terminal-bar">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+          <span class="term-filename">config.json</span>
+        </div>
+        <pre>{
+  <span class="jk">"deadzone"</span><span class="jp">:</span> <span class="jn">0.15</span><span class="jp">,</span>
+  <span class="jk">"mouseSpeed"</span><span class="jp">:</span> <span class="jn">15</span><span class="jp">,</span>
+  <span class="jk">"scrollSpeed"</span><span class="jp">:</span> <span class="jn">2</span><span class="jp">,</span>
+  <span class="jk">"leftStick"</span><span class="jp">:</span> <span class="js">"mouse"</span><span class="jp">,</span>
+  <span class="jk">"rightStick"</span><span class="jp">:</span> <span class="js">"scroll"</span><span class="jp">,</span>
+  <span class="jk">"bindings"</span><span class="jp">:</span> <span class="jp">{</span>
+    <span class="jk">"buttonA"</span><span class="jp">:</span>               <span class="jp">{</span> <span class="jk">"type"</span><span class="jp">:</span> <span class="js">"key"</span><span class="jp">,</span>         <span class="jk">"key"</span><span class="jp">:</span> <span class="js">"Space"</span><span class="jp">,</span>          <span class="jk">"repeat"</span><span class="jp">:</span> <span class="jb">true</span> <span class="jp">},</span>
+    <span class="jk">"buttonB"</span><span class="jp">:</span>               <span class="jp">{</span> <span class="jk">"type"</span><span class="jp">:</span> <span class="js">"key"</span><span class="jp">,</span>         <span class="jk">"key"</span><span class="jp">:</span> <span class="js">"Return"</span> <span class="jp">},</span>
+    <span class="jk">"buttonX"</span><span class="jp">:</span>               <span class="jp">{</span> <span class="jk">"type"</span><span class="jp">:</span> <span class="js">"mouseButton"</span><span class="jp">,</span> <span class="jk">"button"</span><span class="jp">:</span> <span class="js">"left"</span> <span class="jp">},</span>
+    <span class="jk">"buttonY"</span><span class="jp">:</span>               <span class="jp">{</span> <span class="jk">"type"</span><span class="jp">:</span> <span class="js">"key"</span><span class="jp">,</span>         <span class="jk">"key"</span><span class="jp">:</span> <span class="js">"Backspace"</span><span class="jp">,</span>      <span class="jk">"repeat"</span><span class="jp">:</span> <span class="jb">true</span> <span class="jp">},</span>
+    <span class="jk">"leftShoulder"</span><span class="jp">:</span>          <span class="jp">{</span> <span class="jk">"type"</span><span class="jp">:</span> <span class="js">"key"</span><span class="jp">,</span>         <span class="jk">"key"</span><span class="jp">:</span> <span class="js">"Escape"</span> <span class="jp">},</span>
+    <span class="jk">"rightShoulder"</span><span class="jp">:</span>         <span class="jp">{</span> <span class="jk">"type"</span><span class="jp">:</span> <span class="js">"mouseButton"</span><span class="jp">,</span> <span class="jk">"button"</span><span class="jp">:</span> <span class="js">"right"</span> <span class="jp">},</span>
+    <span class="jk">"leftTrigger"</span><span class="jp">:</span>           <span class="jp">{</span> <span class="jk">"type"</span><span class="jp">:</span> <span class="js">"key"</span><span class="jp">,</span>         <span class="jk">"key"</span><span class="jp">:</span> <span class="js">"RightShift"</span> <span class="jp">},</span>
+    <span class="jk">"rightTrigger"</span><span class="jp">:</span>          <span class="jp">{</span> <span class="jk">"type"</span><span class="jp">:</span> <span class="js">"key"</span><span class="jp">,</span>         <span class="jk">"key"</span><span class="jp">:</span> <span class="js">"Alt+Return"</span> <span class="jp">},</span>
+    <span class="jk">"leftThumbstickButton"</span><span class="jp">:</span>  <span class="jp">{</span> <span class="jk">"type"</span><span class="jp">:</span> <span class="js">"key"</span><span class="jp">,</span>         <span class="jk">"key"</span><span class="jp">:</span> <span class="js">"Cmd+C"</span> <span class="jp">},</span>
+    <span class="jk">"rightThumbstickButton"</span><span class="jp">:</span> <span class="jp">{</span> <span class="jk">"type"</span><span class="jp">:</span> <span class="js">"key"</span><span class="jp">,</span>         <span class="jk">"key"</span><span class="jp">:</span> <span class="js">"Cmd+V"</span> <span class="jp">},</span>
+    <span class="jk">"dpadUp"</span><span class="jp">:</span>                <span class="jp">{</span> <span class="jk">"type"</span><span class="jp">:</span> <span class="js">"key"</span><span class="jp">,</span>         <span class="jk">"key"</span><span class="jp">:</span> <span class="js">"Up"</span><span class="jp">,</span>             <span class="jk">"repeat"</span><span class="jp">:</span> <span class="jb">true</span> <span class="jp">},</span>
+    <span class="jk">"dpadDown"</span><span class="jp">:</span>              <span class="jp">{</span> <span class="jk">"type"</span><span class="jp">:</span> <span class="js">"key"</span><span class="jp">,</span>         <span class="jk">"key"</span><span class="jp">:</span> <span class="js">"Down"</span><span class="jp">,</span>           <span class="jk">"repeat"</span><span class="jp">:</span> <span class="jb">true</span> <span class="jp">},</span>
+    <span class="jk">"dpadLeft"</span><span class="jp">:</span>              <span class="jp">{</span> <span class="jk">"type"</span><span class="jp">:</span> <span class="js">"key"</span><span class="jp">,</span>         <span class="jk">"key"</span><span class="jp">:</span> <span class="js">"Left"</span><span class="jp">,</span>           <span class="jk">"repeat"</span><span class="jp">:</span> <span class="jb">true</span> <span class="jp">},</span>
+    <span class="jk">"dpadRight"</span><span class="jp">:</span>             <span class="jp">{</span> <span class="jk">"type"</span><span class="jp">:</span> <span class="js">"key"</span><span class="jp">,</span>         <span class="jk">"key"</span><span class="jp">:</span> <span class="js">"Right"</span><span class="jp">,</span>          <span class="jk">"repeat"</span><span class="jp">:</span> <span class="jb">true</span> <span class="jp">},</span>
+    <span class="jk">"createButton"</span><span class="jp">:</span>          <span class="jp">{</span> <span class="jk">"type"</span><span class="jp">:</span> <span class="js">"key"</span><span class="jp">,</span>         <span class="jk">"key"</span><span class="jp">:</span> <span class="js">"Fn+Ctrl+Left"</span> <span class="jp">},</span>
+    <span class="jk">"optionsButton"</span><span class="jp">:</span>         <span class="jp">{</span> <span class="jk">"type"</span><span class="jp">:</span> <span class="js">"key"</span><span class="jp">,</span>         <span class="jk">"key"</span><span class="jp">:</span> <span class="js">"Fn+Ctrl+Right"</span> <span class="jp">}</span>
+  <span class="jp">}</span>
+<span class="jp">}</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- PS5 Preset -->
+  <section id="ps5">
+    <div class="section-eyebrow">// 示範設定</div>
+    <h2>PS5 示範設定 <span style="font-family:var(--body);font-size:1rem;font-weight:300;color:var(--text2);">(易上手版)</span></h2>
+    <p>下載後直接覆蓋到 <code>~/Library/Application Support/FooTinderPad/config.json</code> 即可。</p>
+    <a href="docs/examples/easy-preset.json" class="dl-link">⬇&ensp;docs/examples/easy-preset.json</a>
+    <p>設計重點：善用 PS 慣例（Cross 確認 / Circle 取消）、讓三角 / 方塊 / 觸控板邊上的小鈕都各司其職、L2/R2 直接給最常用的複製貼上。</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>按鈕</th><th>對應</th><th>說明</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>左搖桿</td><td><code>mouse</code></td><td>滑鼠移動 · <code>mouseSpeed: 25</code></td></tr>
+          <tr><td>右搖桿</td><td><code>scroll</code></td><td>滾輪捲動 · <code>scrollSpeed: 5</code></td></tr>
+          <tr><td><span class="bb bb-cross">×</span> Cross</td><td>滑鼠左鍵</td><td>PS 慣例「主要動作」</td></tr>
+          <tr><td><span class="bb bb-circle">○</span> Circle</td><td><code>Escape</code></td><td>PS 慣例「取消/返回」</td></tr>
+          <tr><td><span class="bb bb-square">■</span> Square</td><td><code>Backspace</code> (repeat)</td><td>文字編輯刪除，按住連續刪</td></tr>
+          <tr><td><span class="bb bb-tri">△</span> Triangle</td><td><code>Space</code></td><td>影片播放 / 瀏覽器捲頁</td></tr>
+          <tr><td><span class="bb bb-sh">L1</span></td><td><code>LeftShift</code></td><td>跟方向鍵搭配選文字，也跟 R1 (Return) 組成 Shift+Enter</td></tr>
+          <tr><td><span class="bb bb-sh">R1</span></td><td><code>Return</code></td><td>確認 / 換行</td></tr>
+          <tr><td><span class="bb bb-sh">L2</span></td><td><code>LeftCmd</code></td><td>按住搭配實體鍵盤組合 Cmd 快捷鍵</td></tr>
+          <tr><td><span class="bb bb-sh">R2</span></td><td><code>RightCmd</code></td><td>同上，食指搆得到的位置，適合右手切換 app</td></tr>
+          <tr><td><span class="bb bb-sh">L3</span></td><td><code>/</code> Slash</td><td>常用於搜尋啟動</td></tr>
+          <tr><td><span class="bb bb-sh">R3</span></td><td>滑鼠右鍵</td><td>Context menu</td></tr>
+          <tr><td>D-pad ↑↓←→</td><td>滑鼠微移動</td><td><code>dpad: "mouse"</code> · <code>dpadMouseSpeed: 3</code>，原始碼內建線性曲線</td></tr>
+          <tr><td>Create（左上小鈕）</td><td><code>Cmd+V</code></td><td>貼上</td></tr>
+          <tr><td>Options（右上小鈕）</td><td><code>Cmd+C</code></td><td>複製（拇指容易按到，比扳機順）</td></tr>
+          <tr><td>觸控板按下</td><td><code>Fn+Ctrl+Up</code></td><td>呼叫 Mission Control（macOS 內建快捷鍵）</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Battery -->
+  <section id="battery">
+    <div class="section-eyebrow">// 功能</div>
+    <h2>Battery Indicator</h2>
+    <div class="card">
+      <h3>🔋 Menu Bar 電量顯示</h3>
+      <p>當控制器連線且回報電量時，menu bar 圖示右側會顯示百分比。</p>
+      <div class="battery-row">
+        <div class="batt batt-normal">🎮 <span class="pct">82%</span></div>
+        <div class="batt batt-charging">🎮 <span class="pct">⚡82%</span></div>
+        <div class="batt batt-full">🎮 <span class="pct">⚡100%</span></div>
+        <div class="batt batt-warn">🎮 <span class="pct">15%</span></div>
+      </div>
+      <p>充電中加上 <code>⚡</code> 前綴；充滿時顯示 <code>⚡100%</code>。放電時若降到 20% 或以下，數字轉為紅色提醒充電（充電中的低電量不轉紅，因為已在充電）。</p>
+      <p>DualSense over Bluetooth 和 Xbox Wireless Controller over BLE 都有 fallback reader：macOS <code>GameController</code> 沒提供電量時，app 會改走控制器專用讀取路徑。控制器未提供電量資訊（有線通用 HID、部分第三方型號）時不顯示百分比，只留 icon。</p>
+    </div>
+  </section>
+
+  <!-- Launch at Login -->
+  <section id="login">
+    <div class="section-eyebrow">// 功能</div>
+    <h2>Launch at Login</h2>
+    <div class="card">
+      <h3>🚀 登入自動啟動</h3>
+      <p>從選單列點 FooTinderPad 圖示 → <code>Launch at Login</code> 切換開關。打開後 macOS 會在使用者登入時自動啟動 app，同樣的開關也會出現在「系統設定 → 一般 → 登入項目」。</p>
+      <p>第一次開啟時 macOS 可能要求核可：選單上的項目旁邊會出現黃色三角警示，點下去會帶你到「系統設定 → 一般 → 登入項目」，在那邊把 FooTinderPad 切到開即可。</p>
+      <p>若 app 是用本機 self-signed 簽章（例如預設的 <code>FooTinderPadDev</code> cert，沒有 Apple Developer Team Identifier），<code>SMAppService</code> 沒辦法登錄 login item。這時會自動 fallback：寫一份 LaunchAgent plist 到 <code>~/Library/LaunchAgents/com.purefuncinc.FooTinderPad.plist</code>，下次登入由 launchd 啟動。要關掉一樣從選單按一次 <code>Launch at Login</code> 即可。注意這條路線下「系統設定 → 一般 → 登入項目」清單不會列出 FooTinderPad — 選單上的 toggle 才是真實狀態。</p>
+    </div>
+  </section>
+
+  <!-- Supported Buttons -->
+  <section id="buttons">
+    <div class="section-eyebrow">// 參考</div>
+    <h2>支援的控制器按鈕</h2>
+    <p>下表的 key 用於 <code>bindings</code> 物件的 JSON 屬性名。沒列在 config 裡的按鈕會被當成 <code>none</code>。</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>JSON key</th><th>PlayStation</th><th>Xbox</th><th>說明</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>buttonA</code></td>
+            <td><span class="bb bb-cross">×</span> Cross</td>
+            <td><span class="bb bb-a">A</span></td>
+            <td>下方面鈕</td>
+          </tr>
+          <tr>
+            <td><code>buttonB</code></td>
+            <td><span class="bb bb-circle">○</span> Circle</td>
+            <td><span class="bb bb-b">B</span></td>
+            <td>右方面鈕</td>
+          </tr>
+          <tr>
+            <td><code>buttonX</code></td>
+            <td><span class="bb bb-square">■</span> Square</td>
+            <td><span class="bb bb-x">X</span></td>
+            <td>左方面鈕</td>
+          </tr>
+          <tr>
+            <td><code>buttonY</code></td>
+            <td><span class="bb bb-tri">△</span> Triangle</td>
+            <td><span class="bb bb-y">Y</span></td>
+            <td>上方面鈕</td>
+          </tr>
+          <tr>
+            <td><code>leftShoulder</code> / <code>rightShoulder</code></td>
+            <td>L1 / R1</td>
+            <td>LB / RB</td>
+            <td>上肩鍵</td>
+          </tr>
+          <tr>
+            <td><code>leftTrigger</code> / <code>rightTrigger</code></td>
+            <td>L2 / R2</td>
+            <td>LT / RT</td>
+            <td>下扳機（類比，觸發點 0.55 / 釋放點 0.45）</td>
+          </tr>
+          <tr>
+            <td><code>leftThumbstickButton</code> / <code>rightThumbstickButton</code></td>
+            <td>L3 / R3</td>
+            <td>LS / RS</td>
+            <td>按下搖桿</td>
+          </tr>
+          <tr>
+            <td><code>dpadUp</code> / <code>dpadDown</code> / <code>dpadLeft</code> / <code>dpadRight</code></td>
+            <td colspan="2">方向鍵</td>
+            <td>D-pad 四向</td>
+          </tr>
+          <tr>
+            <td><code>createButton</code></td>
+            <td>Create（左上小鈕）</td>
+            <td>View</td>
+            <td>觸控板左上方</td>
+          </tr>
+          <tr>
+            <td><code>optionsButton</code></td>
+            <td>Options（右上小鈕）</td>
+            <td>Menu</td>
+            <td>觸控板右上方</td>
+          </tr>
+          <tr>
+            <td><code>touchpadButton</code></td>
+            <td>按下整片觸控板</td>
+            <td>—</td>
+            <td>僅 PS4 (DualShock4) / PS5 (DualSense)，Xbox 無</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card" style="margin-top:1.5rem">
+      <h3>搖桿與 D-pad 角色</h3>
+      <p>
+        <code>leftStick</code> / <code>rightStick</code> 接受
+        <code>"mouse"</code>&ensp;<code>"scroll"</code>&ensp;<code>"none"</code> 三種角色。
+      </p>
+      <p>
+        <code>dpad</code> 接受
+        <code>"bindings"</code>&ensp;<code>"mouse"</code>&ensp;<code>"scroll"</code>&ensp;<code>"none"</code> 四種角色。<br>
+        預設設定使用 <code>"bindings"</code> 搭配方向鍵綁定；若想改成線性滑鼠微移動，設為 <code>"mouse"</code> 並加入 <code>dpadMouseSpeed</code>。
+      </p>
+    </div>
+  </section>
+
+  <!-- Supported Keys -->
+  <section id="keys">
+    <div class="section-eyebrow">// 參考</div>
+    <h2>支援的按鍵</h2>
+    <p><code>bindings</code> 中使用的 key 字串由 <code>KeyParser</code> 解析。Token 大小寫不敏感，以 <code>+</code> 串接組合鍵（例：<code>Ctrl+Shift+A</code>）。</p>
+
+    <h3>修飾鍵 (Modifiers)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>修飾鍵</th><th>可用別名</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Control</td>
+            <td><code>ctrl</code> · <code>control</code> · <code>leftctrl</code> · <code>leftcontrol</code> · <code>rightctrl</code> · <code>rightcontrol</code></td>
+          </tr>
+          <tr>
+            <td>Option / Alt</td>
+            <td><code>alt</code> · <code>option</code> · <code>leftalt</code> · <code>leftoption</code> · <code>rightalt</code> · <code>rightoption</code></td>
+          </tr>
+          <tr>
+            <td>Shift</td>
+            <td><code>shift</code> · <code>leftshift</code> · <code>rightshift</code></td>
+          </tr>
+          <tr>
+            <td>Command / Win</td>
+            <td><code>cmd</code> · <code>command</code> · <code>win</code> · <code>leftcmd</code> · <code>leftcommand</code> · <code>leftwin</code> · <code>rightcmd</code> · <code>rightcommand</code> · <code>rightwin</code></td>
+          </tr>
+          <tr>
+            <td>Function</td>
+            <td><code>fn</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>主鍵 (Main Keys)</h3>
+    <div class="key-cloud">
+      <span class="key-chip">a – z</span>
+      <span class="key-chip">0 – 9</span>
+      <span class="key-chip">f1 – f20</span>
+      <span class="key-chip">up</span>
+      <span class="key-chip">down</span>
+      <span class="key-chip">left</span>
+      <span class="key-chip">right</span>
+      <span class="key-chip">space</span>
+      <span class="key-chip">return</span>
+      <span class="key-chip">tab</span>
+      <span class="key-chip">escape</span>
+      <span class="key-chip">backspace</span>
+      <span class="key-chip">delete</span>
+      <span class="key-chip">home</span>
+      <span class="key-chip">end</span>
+      <span class="key-chip">pageup</span>
+      <span class="key-chip">pagedown</span>
+      <span class="key-chip">minus</span>
+      <span class="key-chip">equal</span>
+      <span class="key-chip">leftbracket</span>
+      <span class="key-chip">rightbracket</span>
+      <span class="key-chip">backslash</span>
+      <span class="key-chip">semicolon</span>
+      <span class="key-chip">quote</span>
+      <span class="key-chip">comma</span>
+      <span class="key-chip">period</span>
+      <span class="key-chip">slash</span>
+      <span class="key-chip">grave</span>
+    </div>
+
+    <h3>組合規則</h3>
+    <div class="card">
+      <ul class="prose-list">
+        <li>單一 token 可以是「主鍵」（例：<code>a</code>、<code>space</code>）或「純修飾鍵綁定」（例：<code>ctrl</code>、<code>fn</code>）</li>
+        <li>多 token 時，最後一個必須是主鍵，前面全部必須是修飾鍵，例如 <code>Ctrl+Shift+A</code>、<code>Cmd+Space</code>、<code>Alt+Return</code></li>
+        <li>重複的修飾鍵會自動去重</li>
+        <li>結尾若是修飾鍵（例：<code>Ctrl+Shift</code>）會丟出 <code>modifierInMainKeyPosition</code> 錯誤</li>
+        <li>空 token（開頭、結尾或連續的 <code>+</code>）會丟出 <code>emptySeparatorComponent</code> 錯誤</li>
+      </ul>
+    </div>
+
+    <h3>自動重複 (auto-repeat)</h3>
+    <p>
+      加入 <code>"repeat": true</code>，按住按鈕時對應鍵會以 ~30 Hz 連續重發（400 ms 初始延遲後），
+      類似實體鍵盤按住 Backspace 連刪。預設為 <code>false</code>。
+      寫了 <code>"repeat": true</code> 但綁定是純修飾鍵 / mouseButton / none 的話會被忽略並產生 warning。
+    </p>
+    <div class="terminal">
+      <div class="terminal-bar">
+        <div class="dot dot-r"></div>
+        <div class="dot dot-y"></div>
+        <div class="dot dot-g"></div>
+        <span class="term-filename">config.json 範例</span>
+      </div>
+      <pre><span class="jk">"buttonX"</span><span class="jp">:</span> <span class="jp">{</span> <span class="jk">"type"</span><span class="jp">:</span> <span class="js">"key"</span><span class="jp">,</span> <span class="jk">"key"</span><span class="jp">:</span> <span class="js">"Backspace"</span><span class="jp">,</span> <span class="jk">"repeat"</span><span class="jp">:</span> <span class="jb">true</span> <span class="jp">}</span></pre>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  🎮 FooTinderPad &mdash; <a href="https://github.com/purefuncinc">PureFuncInc</a> &mdash; Built with Swift for macOS
+</footer>
+
+</body>
+</html>
